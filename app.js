@@ -103,10 +103,12 @@
     });
   }
 
-  function renderCard(p) {
+  function renderCard(p, index) {
     const isFav = state.favorites.has(p.id);
     const regionLabel = p.region === 'jp' ? '🇯🇵 国内' : '🌍 海外';
     const regionClass = p.region === 'jp' ? 'jp' : 'global';
+    const idParts = (p.id || '').split('-');
+    const serialNum = idParts[idParts.length - 1] || String(index + 1).padStart(2, '0');
     const thumb = p.thumbnail
       ? `<img src="${escapeHtml(p.thumbnail)}" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.remove();">`
       : '🎬';
@@ -138,6 +140,10 @@
           ${p.platform ? `<span class="card-platform-badge">${escapeHtml(p.platform)}</span>` : ''}
         </div>
         <div class="card-body">
+          <div class="card-serial">
+            <span class="card-serial-num">${escapeHtml(serialNum)}</span>
+            <span class="card-serial-region">${p.region === 'jp' ? 'JP' : 'GLOBAL'}</span>
+          </div>
           <h3 class="card-title">${escapeHtml(p.title)}</h3>
           ${p.creator ? `<p class="card-creator">${escapeHtml(p.creator)}</p>` : ''}
           ${p.notes ? `<p class="card-notes">${escapeHtml(p.notes)}</p>` : ''}
@@ -165,7 +171,7 @@
       grid.innerHTML = '';
       empty.style.display = 'block';
     } else {
-      grid.innerHTML = filtered.map(renderCard).join('');
+      grid.innerHTML = filtered.map((p, i) => renderCard(p, i)).join('');
       empty.style.display = 'none';
     }
 
@@ -397,6 +403,21 @@
     }
   }
 
+  function updateHeroMeta() {
+    const dates = uniq(picks.map(p => p.date)).sort();
+    const volNum = String(dates.length || 0).padStart(3, '0');
+    const latest = dates[dates.length - 1] || '';
+    const volEl = document.getElementById('hero-vol-num');
+    const dateEl = document.getElementById('hero-date');
+    if (volEl) volEl.textContent = volNum;
+    if (dateEl && latest) {
+      // Format: 2026.05.22
+      dateEl.textContent = latest.replace(/-/g, '.');
+    } else if (dateEl) {
+      dateEl.textContent = '—';
+    }
+  }
+
   function init() {
     buildChipFilter('genre-filter', getAllGenres(), 'genre');
     buildChipFilter('tech-filter', getAllTechs(), 'tech');
@@ -404,6 +425,7 @@
     attachEventListeners();
     render();
     initBackgroundVideo();
+    updateHeroMeta();
   }
 
   if (document.readyState === 'loading') {

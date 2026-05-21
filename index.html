@@ -30,9 +30,23 @@
   </header>
 
   <section class="hero">
-    <h2 class="hero-title">センスのいい映像・モーショングラフィックスを毎日ピックアップ</h2>
-    <p class="hero-subtitle">国内外のYouTube・Vimeo・X・TikTok・Behance等から厳選した参考作品アーカイブ</p>
-    <span class="hero-update">毎朝10時 自動更新</span>
+    <div class="hero-meta">
+      <span class="hero-meta-label">ARCHIVE</span>
+      <span class="hero-meta-sep"></span>
+      <span class="hero-meta-vol">VOL. <span id="hero-vol-num">001</span></span>
+      <span class="hero-meta-sep"></span>
+      <span class="hero-meta-date" id="hero-date">—</span>
+    </div>
+    <h2 class="hero-title">
+      <span class="hero-title-line">センスのいい映像 &amp;</span>
+      <span class="hero-title-line">モーショングラフィックスを<span class="hero-title-accent">毎日</span>ピックアップ。</span>
+    </h2>
+    <p class="hero-subtitle">国内外の YouTube・Vimeo・X・TikTok・Behance 等から厳選した、プロフェッショナルのための参考作品アーカイブ。</p>
+    <div class="hero-utility">
+      <span class="hero-update">毎朝10時 自動更新</span>
+      <span class="hero-divider"></span>
+      <span class="hero-tagline">CURATED BY AI — REVIEWED FOR REFERENCE</span>
+    </div>
   </section>
 
   <section class="filter-bar">
@@ -42,7 +56,11 @@
 
     <div class="filter-section">
       <div class="filter-section-header">
-        <span class="filter-section-title">エリアから探す</span>
+        <span class="filter-section-num">01</span>
+        <div class="filter-section-text">
+          <span class="filter-section-title">エリアから探す</span>
+          <span class="filter-section-sub">Region</span>
+        </div>
       </div>
       <div class="chip-group" id="region-filter">
         <button class="chip active" data-region="all">すべて</button>
@@ -53,7 +71,11 @@
 
     <div class="filter-section">
       <div class="filter-section-header">
-        <span class="filter-section-title">ジャンルから探す</span>
+        <span class="filter-section-num">02</span>
+        <div class="filter-section-text">
+          <span class="filter-section-title">ジャンルから探す</span>
+          <span class="filter-section-sub">Genre</span>
+        </div>
       </div>
       <div class="chip-group" id="genre-filter">
         <button class="chip active" data-genre="all">すべて</button>
@@ -62,7 +84,11 @@
 
     <div class="filter-section">
       <div class="filter-section-header">
-        <span class="filter-section-title">技術・スタイルから探す</span>
+        <span class="filter-section-num">03</span>
+        <div class="filter-section-text">
+          <span class="filter-section-title">技術・スタイルから探す</span>
+          <span class="filter-section-sub">Technique &amp; Style</span>
+        </div>
       </div>
       <div class="chip-group" id="tech-filter">
         <button class="chip active" data-tech="all">すべて</button>
@@ -82,7 +108,14 @@
   </section>
 
   <div class="result-count">
-    <strong id="result-count-num">0</strong>件の作品
+    <div class="result-count-left">
+      <span class="result-count-label">SHOWING</span>
+      <strong id="result-count-num">0</strong>
+      <span class="result-count-unit">件 の作品</span>
+    </div>
+    <div class="result-count-right">
+      <span class="result-count-tagline">latest picks first</span>
+    </div>
   </div>
 
   <main id="card-grid" class="card-grid">
