@@ -105,13 +105,13 @@
 
   function renderCard(p, index) {
     const isFav = state.favorites.has(p.id);
-    const regionLabel = p.region === 'jp' ? '🇯🇵 国内' : '🌍 海外';
+    const regionLabel = p.region === 'jp' ? 'JP / 国内' : 'INT / 海外';
     const regionClass = p.region === 'jp' ? 'jp' : 'global';
     const idParts = (p.id || '').split('-');
     const serialNum = idParts[idParts.length - 1] || String(index + 1).padStart(2, '0');
     const thumb = p.thumbnail
       ? `<img src="${escapeHtml(p.thumbnail)}" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.remove();">`
-      : '🎬';
+      : '<svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="14" width="48" height="36" rx="3"/><line x1="20" y1="14" x2="20" y2="50"/><line x1="44" y1="14" x2="44" y2="50"/><line x1="8" y1="22" x2="20" y2="22"/><line x1="8" y1="42" x2="20" y2="42"/><line x1="44" y1="22" x2="56" y2="22"/><line x1="44" y1="42" x2="56" y2="42"/></svg>';
 
     const genreTags = (p.genre || []).map(g =>
       `<span class="card-tag genre">${escapeHtml(g)}</span>`
@@ -134,8 +134,14 @@
         <div class="card-thumbnail ${p.thumbnail ? '' : 'no-image'}" data-url="${escapeHtml(p.videoUrl || '')}">
           ${thumb}
           <span class="card-region-badge ${regionClass}">${regionLabel}</span>
-          <button class="card-favorite ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" title="お気に入り">
-            ${isFav ? '★' : '☆'}
+          <button class="card-favorite ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" title="お気に入り" aria-label="お気に入り">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M12 2.5l2.92 6.36 6.97.65-5.27 4.78 1.59 6.85L12 17.77 5.79 21.14l1.59-6.85L2.11 9.51l6.97-.65L12 2.5z"
+                fill="${isFav ? 'currentColor' : 'none'}"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linejoin="round"/>
+            </svg>
           </button>
           ${p.platform ? `<span class="card-platform-badge">${escapeHtml(p.platform)}</span>` : ''}
         </div>
