@@ -131,6 +131,7 @@ body.bg-off #bg-video-wrapper {
 /* All other content must be above the video and overlay */
 .site-header,
 .hero,
+.content-tabs-wrap,
 .filter-bar,
 .result-count,
 .card-grid,
@@ -475,89 +476,115 @@ body.bg-off .bg-toggle {
 }
 
 /* ========== Content Tabs ========== */
-.content-tabs {
+.content-tabs-wrap {
   max-width: 1320px;
-  margin: 0 auto;
-  padding: 8px 32px 0;
+  margin: 16px auto 0;
+  padding: 0 32px;
+}
+
+.content-tabs {
   display: flex;
   align-items: stretch;
-  gap: 0;
+  gap: 4px;
   position: relative;
-  border-bottom: 1px solid var(--border);
+  background: rgba(11, 13, 18, 0.7);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 6px;
+  box-shadow: var(--shadow-md);
 }
 
 .content-tab {
+  flex: 1;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
-  padding: 18px 28px;
+  padding: 14px 22px;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  border-radius: 8px;
+  color: var(--text-dim);
   cursor: pointer;
   font-family: inherit;
   position: relative;
-  transition: color var(--transition);
+  transition: all var(--transition);
+  z-index: 1;
 }
 
 .content-tab:hover {
-  color: var(--text-dim);
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .content-tab.active {
   color: var(--text);
+  background: linear-gradient(135deg, rgba(139, 124, 255, 0.18) 0%, rgba(255, 107, 122, 0.12) 100%);
+  border: 1px solid rgba(139, 124, 255, 0.35);
+  padding: 13px 21px; /* adjust for border */
+  box-shadow: 0 4px 18px rgba(139, 124, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .content-tab-num {
   font-family: 'Inter', monospace;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--text-muted);
   font-feature-settings: "tnum" 1;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition: all var(--transition);
 }
 
 .content-tab.active .content-tab-num {
-  color: var(--accent-strong);
+  color: #fff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(139, 124, 255, 0.5);
 }
 
 .content-tab-main {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
+  gap: 3px;
   text-align: left;
 }
 
 .content-tab-label {
   font-family: 'Inter', sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: 0.18em;
   line-height: 1.1;
+  color: inherit;
 }
 
 .content-tab-jp {
   font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   color: var(--text-muted);
   line-height: 1;
+  transition: color var(--transition);
 }
 
 .content-tab.active .content-tab-jp {
   color: var(--text-dim);
 }
 
+.content-tab:hover .content-tab-jp {
+  color: var(--text-dim);
+}
+
+/* No longer using bottom indicator with new tab style */
 .content-tab-indicator {
-  position: absolute;
-  bottom: -1px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent) 0%, var(--jp) 100%);
-  transition: left 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  border-radius: 2px;
-  pointer-events: none;
+  display: none;
 }
 
 /* ========== Filter Bar ========== */
@@ -1446,26 +1473,35 @@ body.bg-off .bg-toggle {
     text-overflow: clip;
   }
 
+  .content-tabs-wrap {
+    padding: 0 16px;
+  }
+
   .content-tabs {
-    padding: 4px 16px 0;
+    padding: 4px;
   }
 
   .content-tab {
-    padding: 14px 16px;
+    padding: 10px 12px;
     gap: 10px;
   }
 
+  .content-tab.active {
+    padding: 9px 11px;
+  }
+
   .content-tab-label {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     letter-spacing: 0.14em;
   }
 
   .content-tab-jp {
-    font-size: 0.66rem;
+    font-size: 0.62rem;
   }
 
   .content-tab-num {
-    font-size: 0.62rem;
+    font-size: 0.6rem;
+    padding: 2px 6px;
   }
 
   .header-inner,

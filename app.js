@@ -471,17 +471,6 @@
     if (searchInput) searchInput.value = '';
   }
 
-  function applyTabIndicator() {
-    const activeTab = document.querySelector('.content-tab.active');
-    const indicator = document.querySelector('.content-tab-indicator');
-    if (activeTab && indicator) {
-      const rect = activeTab.getBoundingClientRect();
-      const parentRect = activeTab.parentElement.getBoundingClientRect();
-      indicator.style.left = (rect.left - parentRect.left) + 'px';
-      indicator.style.width = rect.width + 'px';
-    }
-  }
-
   function switchType(newType) {
     if (VALID_TYPES.indexOf(newType) === -1) return;
     if (state.type === newType) return;
@@ -494,7 +483,6 @@
       tab.classList.toggle('active', isActive);
       tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
-    applyTabIndicator();
 
     // Reset filters and rebuild for new type
     resetFilters();
@@ -506,7 +494,6 @@
   }
 
   function initTabs() {
-    // Apply saved type
     document.querySelectorAll('.content-tab').forEach(tab => {
       const isActive = tab.getAttribute('data-type') === state.type;
       tab.classList.toggle('active', isActive);
@@ -515,10 +502,6 @@
         switchType(tab.getAttribute('data-type'));
       });
     });
-
-    // Position indicator after layout
-    requestAnimationFrame(() => applyTabIndicator());
-    window.addEventListener('resize', applyTabIndicator);
   }
 
   // ========== Card size toggle ==========
