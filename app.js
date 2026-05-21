@@ -8,9 +8,12 @@
   const STORAGE_KEY = 'motion-picks-favorites-v1';
   const BG_STORAGE_KEY = 'motion-picks-bg-enabled-v1';
   const SIZE_STORAGE_KEY = 'motion-picks-card-size-v1';
+  const TYPE_STORAGE_KEY = 'motion-picks-content-type-v1';
   const VALID_SIZES = ['sm', 'md', 'lg'];
+  const VALID_TYPES = ['video', 'graphic'];
 
   const state = {
+    type: loadType(),
     region: 'all',
     genre: 'all',
     tech: 'all',
@@ -20,9 +23,26 @@
     favorites: loadFavorites(),
   };
 
-  const picks = (window.picksData || []).slice().sort((a, b) => {
+  // Normalize picks: default type to 'video' for legacy entries without type field
+  const picks = (window.picksData || []).map(p => {
+    return Object.assign({ type: 'video' }, p);
+  }).sort((a, b) => {
     return (b.date || '').localeCompare(a.date || '');
   });
+
+  function loadType() {
+    try {
+      const v = localStorage.getItem(TYPE_STORAGE_KEY);
+      if (VALID_TYPES.indexOf(v) !== -1) return v;
+    } catch (e) {}
+    return 'video';
+  }
+
+  function saveType(t) {
+    try {
+      localStorage.setItem(TYPE_STORAGE_KEY, t);
+    } catch (e) {}
+  }
 
   function loadFavorites() {
     try {
@@ -45,20 +65,24 @@
     return Array.from(new Set(arr.filter(Boolean)));
   }
 
-  function getAllGenres() {
+  function picksOfType(type) {
+    return picks.filter(p => p.type === type);
+  }
+
+  function getAllGenres(type) {
     const all = [];
-    picks.forEach(p => (p.genre || []).forEach(g => all.push(g)));
+    picksOfType(type || state.type).forEach(p => (p.genre || []).forEach(g => all.push(g)));
     return uniq(all).sort();
   }
 
-  function getAllTechs() {
+  function getAllTechs(type) {
     const all = [];
-    picks.forEach(p => (p.techniques || []).forEach(t => all.push(t)));
+    picksOfType(type || state.type).forEach(p => (p.techniques || []).forEach(t => all.push(t)));
     return uniq(all).sort();
   }
 
-  function getAllDates() {
-    return uniq(picks.map(p => p.date)).sort().reverse();
+  function getAllDates(type) {
+    return uniq(picksOfType(type || state.type).map(p => p.date)).sort().reverse();
   }
 
   function escapeHtml(s) {
@@ -87,6 +111,7 @@
 
   function filterPicks() {
     return picks.filter(p => {
+      if (p.type !== state.type) return false;
       if (state.region !== 'all' && p.region !== state.region) return false;
       if (state.genre !== 'all' && !(p.genre || []).includes(state.genre)) return false;
       if (state.tech !== 'all' && !(p.techniques || []).includes(state.tech)) return false;
@@ -175,6 +200,10 @@
     const grid = document.getElementById('card-grid');
     const empty = document.getElementById('empty-state');
 
+    // Apply type class for type-specific styling (aspect ratio etc.)
+    VALID_TYPES.forEach(t => grid.classList.remove('type-' + t));
+    grid.classList.add('type-' + state.type);
+
     if (filtered.length === 0) {
       grid.innerHTML = '';
       empty.style.display = 'block';
@@ -183,9 +212,10 @@
       empty.style.display = 'none';
     }
 
-    document.getElementById('stat-total').textContent = picks.length;
+    const currentTypePicks = picksOfType(state.type);
+    document.getElementById('stat-total').textContent = currentTypePicks.length;
     document.getElementById('stat-favorites').textContent = state.favorites.size;
-    document.getElementById('stat-days').textContent = uniq(picks.map(p => p.date)).length;
+    document.getElementById('stat-days').textContent = uniq(currentTypePicks.map(p => p.date)).length;
 
     const countEl = document.getElementById('result-count-num');
     if (countEl) countEl.textContent = filtered.length;
@@ -193,7 +223,11 @@
 
   function buildChipFilter(containerId, items, attr) {
     const container = document.getElementById(containerId);
+    if (!container) return;
+    // Clear existing chips except the 'all' button
     const allBtn = container.querySelector('[data-' + attr + '="all"]');
+    container.innerHTML = '';
+    if (allBtn) container.appendChild(allBtn);
     items.forEach(item => {
       const btn = document.createElement('button');
       btn.className = 'chip';
@@ -205,6 +239,9 @@
 
   function buildDateFilter() {
     const select = document.getElementById('date-filter');
+    if (!select) return;
+    // Reset
+    select.innerHTML = '<option value="all">すべての日付</option>';
     getAllDates().forEach(d => {
       const opt = document.createElement('option');
       opt.value = d;
@@ -323,7 +360,9 @@
   }
 
   function pickFeaturedVideo() {
-    const eligible = picks.filter(p => getEmbedUrl(p));
+    // BG video always uses video-type picks regardless of current tab
+    const videoOnly = picks.filter(p => p.type === 'video');
+    const eligible = videoOnly.filter(p => getEmbedUrl(p));
     if (eligible.length === 0) return null;
     const latestDate = eligible[0].date;
     const fromLatest = eligible.filter(p => p.date === latestDate);
@@ -411,6 +450,77 @@
     }
   }
 
+  // ========== Content type tabs ==========
+  function resetFilters() {
+    state.region = 'all';
+    state.genre = 'all';
+    state.tech = 'all';
+    state.date = 'all';
+    state.favoritesOnly = false;
+    state.search = '';
+    document.querySelectorAll('.chip-group').forEach(group => {
+      group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      const allBtn = group.querySelector('[data-region="all"], [data-genre="all"], [data-tech="all"]');
+      if (allBtn) allBtn.classList.add('active');
+    });
+    const dateFilter = document.getElementById('date-filter');
+    if (dateFilter) dateFilter.value = 'all';
+    const favOnly = document.getElementById('favorites-only');
+    if (favOnly) favOnly.checked = false;
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = '';
+  }
+
+  function applyTabIndicator() {
+    const activeTab = document.querySelector('.content-tab.active');
+    const indicator = document.querySelector('.content-tab-indicator');
+    if (activeTab && indicator) {
+      const rect = activeTab.getBoundingClientRect();
+      const parentRect = activeTab.parentElement.getBoundingClientRect();
+      indicator.style.left = (rect.left - parentRect.left) + 'px';
+      indicator.style.width = rect.width + 'px';
+    }
+  }
+
+  function switchType(newType) {
+    if (VALID_TYPES.indexOf(newType) === -1) return;
+    if (state.type === newType) return;
+    state.type = newType;
+    saveType(newType);
+
+    // Update tab UI
+    document.querySelectorAll('.content-tab').forEach(tab => {
+      const isActive = tab.getAttribute('data-type') === newType;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+    applyTabIndicator();
+
+    // Reset filters and rebuild for new type
+    resetFilters();
+    buildChipFilter('genre-filter', getAllGenres(), 'genre');
+    buildChipFilter('tech-filter', getAllTechs(), 'tech');
+    buildDateFilter();
+    render();
+    updateHeroMeta();
+  }
+
+  function initTabs() {
+    // Apply saved type
+    document.querySelectorAll('.content-tab').forEach(tab => {
+      const isActive = tab.getAttribute('data-type') === state.type;
+      tab.classList.toggle('active', isActive);
+      tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      tab.addEventListener('click', () => {
+        switchType(tab.getAttribute('data-type'));
+      });
+    });
+
+    // Position indicator after layout
+    requestAnimationFrame(() => applyTabIndicator());
+    window.addEventListener('resize', applyTabIndicator);
+  }
+
   // ========== Card size toggle ==========
   function getSavedSize() {
     try {
@@ -451,14 +561,13 @@
   }
 
   function updateHeroMeta() {
-    const dates = uniq(picks.map(p => p.date)).sort();
+    const dates = uniq(picksOfType(state.type).map(p => p.date)).sort();
     const volNum = String(dates.length || 0).padStart(3, '0');
     const latest = dates[dates.length - 1] || '';
     const volEl = document.getElementById('hero-vol-num');
     const dateEl = document.getElementById('hero-date');
     if (volEl) volEl.textContent = volNum;
     if (dateEl && latest) {
-      // Format: 2026.05.22
       dateEl.textContent = latest.replace(/-/g, '.');
     } else if (dateEl) {
       dateEl.textContent = '—';
@@ -466,6 +575,7 @@
   }
 
   function init() {
+    initTabs();
     buildChipFilter('genre-filter', getAllGenres(), 'genre');
     buildChipFilter('tech-filter', getAllTechs(), 'tech');
     buildDateFilter();
