@@ -1,6 +1,6 @@
 # 🎬 Daily Motion Graphics Picks
 
-毎朝9時に、国内外のセンスのいい映像・モーショングラフィックスを10作品自動キュレーションする社内向けアーカイブサイトです。
+毎朝10時に、国内外のセンスのいい映像・モーショングラフィックスを10作品自動キュレーションする社内向けアーカイブサイトです。
 
 ## 🌐 公開URL
 https://sogo-design.github.io/motion-picks-site/
@@ -8,7 +8,7 @@ https://sogo-design.github.io/motion-picks-site/
 ## 🛠 構成
 - **静的サイト**: `index.html` / `style.css` / `app.js`
 - **データ**: `data.js`（`window.picksData` 配列に毎日10件追記）
-- **更新**: ローカルPCで Claude Code のスケジュールタスクが朝9時に実行 → 自動 git push → GitHub Pages 反映
+- **更新**: ローカルPCで Claude Code のスケジュールタスクが朝10時に実行 → 自動 git push → GitHub Pages 反映
 
 ## 🎯 ピックアップ方針
 - CM・ブランドフィルム・プロモーション: 4〜5作品/日
