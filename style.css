@@ -395,26 +395,36 @@ body.bg-off .bg-toggle {
 
 .hero-subtitle {
   color: var(--text-dim);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   margin: 0;
-  letter-spacing: 0.05em;
-  line-height: 1.9;
+  letter-spacing: 0.04em;
+  line-height: 1.7;
   font-weight: 400;
-  max-width: 680px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hero-utility {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
   margin-top: 22px;
   flex-wrap: wrap;
+  line-height: 1;
+}
+
+.hero-utility > * {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .hero-divider {
-  width: 32px;
+  width: 36px;
   height: 1px;
   background: var(--border-strong);
+  align-self: center;
 }
 
 .hero-tagline {
@@ -424,6 +434,12 @@ body.bg-off .bg-toggle {
   letter-spacing: 0.2em;
   color: var(--text-muted);
   text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Ensure badge has same line-height baseline as tagline */
+.hero-utility .hero-update {
+  margin-top: 0;
 }
 
 .hero-update {
@@ -1160,6 +1176,12 @@ body.bg-off .bg-toggle {
 
 /* ========== Responsive ========== */
 @media (max-width: 768px) {
+  .hero-subtitle {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
   .header-inner,
   .hero,
   .filter-bar,
