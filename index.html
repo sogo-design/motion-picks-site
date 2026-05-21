@@ -122,7 +122,36 @@
       <span class="result-count-unit">件 の作品</span>
     </div>
     <div class="result-count-right">
-      <span class="result-count-tagline">latest picks first</span>
+      <span class="size-toggle-label">CARD SIZE</span>
+      <div class="size-toggle" id="size-toggle" role="group" aria-label="カードサイズ">
+        <button class="size-toggle-btn" data-size="sm" aria-label="小">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <rect x="2" y="2" width="6" height="6" rx="1"/>
+            <rect x="10" y="2" width="6" height="6" rx="1"/>
+            <rect x="18" y="2" width="4" height="6" rx="1"/>
+            <rect x="2" y="10" width="6" height="6" rx="1"/>
+            <rect x="10" y="10" width="6" height="6" rx="1"/>
+            <rect x="18" y="10" width="4" height="6" rx="1"/>
+          </svg>
+          <span>S</span>
+        </button>
+        <button class="size-toggle-btn active" data-size="md" aria-label="中">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <rect x="2" y="2" width="9" height="9" rx="1"/>
+            <rect x="13" y="2" width="9" height="9" rx="1"/>
+            <rect x="2" y="13" width="9" height="9" rx="1"/>
+            <rect x="13" y="13" width="9" height="9" rx="1"/>
+          </svg>
+          <span>M</span>
+        </button>
+        <button class="size-toggle-btn" data-size="lg" aria-label="大">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="9" rx="1"/>
+            <rect x="2" y="13" width="20" height="9" rx="1"/>
+          </svg>
+          <span>L</span>
+        </button>
+      </div>
     </div>
   </div>
 

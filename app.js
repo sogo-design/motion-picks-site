@@ -7,6 +7,8 @@
 
   const STORAGE_KEY = 'motion-picks-favorites-v1';
   const BG_STORAGE_KEY = 'motion-picks-bg-enabled-v1';
+  const SIZE_STORAGE_KEY = 'motion-picks-card-size-v1';
+  const VALID_SIZES = ['sm', 'md', 'lg'];
 
   const state = {
     region: 'all',
@@ -409,6 +411,45 @@
     }
   }
 
+  // ========== Card size toggle ==========
+  function getSavedSize() {
+    try {
+      const v = localStorage.getItem(SIZE_STORAGE_KEY);
+      if (VALID_SIZES.indexOf(v) !== -1) return v;
+    } catch (e) {}
+    return 'md';
+  }
+
+  function applyCardSize(size) {
+    if (VALID_SIZES.indexOf(size) === -1) size = 'md';
+    const grid = document.getElementById('card-grid');
+    if (grid) {
+      VALID_SIZES.forEach(s => grid.classList.remove('size-' + s));
+      grid.classList.add('size-' + size);
+    }
+    document.querySelectorAll('#size-toggle .size-toggle-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-size') === size);
+    });
+    try {
+      localStorage.setItem(SIZE_STORAGE_KEY, size);
+    } catch (e) {}
+  }
+
+  function initSizeToggle() {
+    const initial = getSavedSize();
+    applyCardSize(initial);
+
+    const toggle = document.getElementById('size-toggle');
+    if (toggle) {
+      toggle.addEventListener('click', e => {
+        const btn = e.target.closest('.size-toggle-btn');
+        if (!btn) return;
+        const size = btn.getAttribute('data-size');
+        applyCardSize(size);
+      });
+    }
+  }
+
   function updateHeroMeta() {
     const dates = uniq(picks.map(p => p.date)).sort();
     const volNum = String(dates.length || 0).padStart(3, '0');
@@ -431,6 +472,7 @@
     attachEventListeners();
     render();
     initBackgroundVideo();
+    initSizeToggle();
     updateHeroMeta();
   }
 
