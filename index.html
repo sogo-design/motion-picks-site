@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎬 Daily Motion Graphics Picks</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Daily Motion Graphics Picks</h1>
+      <div class="stats">
+        <div><span id="stat-total">0</span>作品</div>
+        <div><span id="stat-favorites">0</span>★ お気に入り</div>
+        <div><span id="stat-days">0</span>日分</div>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h2 class="hero-title">センスのいい映像・モーショングラフィックスを毎日ピックアップ</h2>
+    <p class="hero-subtitle">国内外のYouTube・Vimeo・X・TikTok・Behance等から厳選した参考作品アーカイブ</p>
+    <span class="hero-update">毎朝9時 自動更新</span>
+  </section>
+
+  <section class="filter-bar">
+    <div class="search-row">
+      <input type="search" id="search-input" placeholder="タイトル・制作者・タグで検索..." />
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section-header">
+        <span class="filter-section-title">エリアから探す</span>
+      </div>
+      <div class="chip-group" id="region-filter">
+        <button class="chip active" data-region="all">すべて</button>
+        <button class="chip" data-region="jp">🇯🇵 国内</button>
+        <button class="chip" data-region="global">🌍 海外</button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section-header">
+        <span class="filter-section-title">ジャンルから探す</span>
+      </div>
+      <div class="chip-group" id="genre-filter">
+        <button class="chip active" data-genre="all">すべて</button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <div class="filter-section-header">
+        <span class="filter-section-title">技術・スタイルから探す</span>
+      </div>
+      <div class="chip-group" id="tech-filter">
+        <button class="chip active" data-tech="all">すべて</button>
+      </div>
+    </div>
+
+    <div class="filter-utility-row">
+      <select id="date-filter">
+        <option value="all">すべての日付</option>
+      </select>
+      <label class="toggle-label">
+        <input type="checkbox" id="favorites-only" />
+        <span>★ お気に入りのみ表示</span>
+      </label>
+      <button class="btn-reset" id="reset-filters">フィルタをリセット</button>
+    </div>
+  </section>
+
+  <div class="result-count">
+    <strong id="result-count-num">0</strong>件の作品
+  </div>
+
+  <main id="card-grid" class="card-grid">
+    <!-- カード群が動的に挿入される -->
+  </main>
+
+  <div id="empty-state" class="empty-state" style="display:none;">
+    <div class="empty-state-icon">🎬</div>
+    <p>該当する作品がありません。</p>
+    <p class="empty-hint">フィルタを変更するか、明朝9時のスケジュールタスクの実行をお待ちください。</p>
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <p>毎朝9時に自動更新 · データは <code>data.js</code> に蓄積</p>
+    </div>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
