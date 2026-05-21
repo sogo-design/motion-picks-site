@@ -44,19 +44,144 @@ html, body {
   padding: 0;
 }
 
+html {
+  background: var(--bg);
+}
+
 body {
   font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic UI', 'Meiryo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse at top left, rgba(139, 124, 255, 0.06) 0%, transparent 45%),
-    radial-gradient(ellipse at bottom right, rgba(94, 179, 255, 0.04) 0%, transparent 45%);
-  background-attachment: fixed;
+  background: transparent;
   color: var(--text);
   min-height: 100vh;
   line-height: 1.6;
   font-size: 15px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========== Background video ========== */
+#bg-video-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+#bg-video-wrapper iframe,
+#bg-video-wrapper video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw;
+  min-height: 100vh;
+  min-width: 177.78vh;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 0;
+}
+
+#bg-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(11, 13, 18, 0.72) 0%, rgba(11, 13, 18, 0.78) 50%, rgba(11, 13, 18, 0.85) 100%),
+    radial-gradient(ellipse at top left, rgba(139, 124, 255, 0.08) 0%, transparent 45%),
+    radial-gradient(ellipse at bottom right, rgba(94, 179, 255, 0.05) 0%, transparent 45%);
+  backdrop-filter: blur(2px);
+}
+
+/* When BG video is off, dim the overlay so dark gradient still shows */
+body.bg-off #bg-video-wrapper iframe,
+body.bg-off #bg-video-wrapper video {
+  display: none;
+}
+
+body.bg-off #bg-overlay {
+  background:
+    var(--bg),
+    radial-gradient(ellipse at top left, rgba(139, 124, 255, 0.06) 0%, transparent 45%),
+    radial-gradient(ellipse at bottom right, rgba(94, 179, 255, 0.04) 0%, transparent 45%);
+  backdrop-filter: none;
+}
+
+body.bg-off #bg-video-wrapper {
+  background: var(--bg);
+}
+
+/* All other content must be above the video and overlay */
+.site-header,
+.hero,
+.filter-bar,
+.result-count,
+.card-grid,
+.empty-state,
+.site-footer,
+.bg-now-playing {
+  position: relative;
+  z-index: 2;
+}
+
+/* Now playing indicator */
+.bg-now-playing {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 10px;
+  background: rgba(11, 13, 18, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  max-width: 340px;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.bg-now-playing-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+#bg-now-playing-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.bg-off .bg-now-playing {
+  display: none !important;
+}
+
+/* Reduced motion: disable BG by default */
+@media (prefers-reduced-motion: reduce) {
+  body:not(.bg-on) #bg-video-wrapper iframe,
+  body:not(.bg-on) #bg-video-wrapper video {
+    display: none;
+  }
 }
 
 /* ========== Header ========== */
@@ -78,6 +203,44 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bg-toggle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+
+.bg-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+body.bg-off .bg-toggle {
+  opacity: 0.55;
+  filter: grayscale(0.7);
+}
+
+.bg-toggle .bg-toggle-icon {
+  display: inline-block;
+  line-height: 1;
 }
 
 .site-header h1 {

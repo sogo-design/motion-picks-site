@@ -7,13 +7,21 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="bg-video-wrapper" aria-hidden="true"></div>
+  <div id="bg-overlay" aria-hidden="true"></div>
+
   <header class="site-header">
     <div class="header-inner">
       <h1>Daily Motion Graphics Picks</h1>
-      <div class="stats">
-        <div><span id="stat-total">0</span>作品</div>
-        <div><span id="stat-favorites">0</span>★ お気に入り</div>
-        <div><span id="stat-days">0</span>日分</div>
+      <div class="header-right">
+        <button id="bg-toggle" class="bg-toggle" title="背景動画 ON/OFF" aria-label="背景動画 ON/OFF">
+          <span class="bg-toggle-icon">🎞️</span>
+        </button>
+        <div class="stats">
+          <div><span id="stat-total">0</span>作品</div>
+          <div><span id="stat-favorites">0</span>★ お気に入り</div>
+          <div><span id="stat-days">0</span>日分</div>
+        </div>
       </div>
     </div>
   </header>
@@ -82,6 +90,11 @@
     <div class="empty-state-icon">🎬</div>
     <p>該当する作品がありません。</p>
     <p class="empty-hint">フィルタを変更するか、明朝10時のスケジュールタスクの実行をお待ちください。</p>
+  </div>
+
+  <div id="bg-now-playing" class="bg-now-playing" style="display:none;">
+    <span class="bg-now-playing-label">▶ BG</span>
+    <span id="bg-now-playing-title"></span>
   </div>
 
   <footer class="site-footer">

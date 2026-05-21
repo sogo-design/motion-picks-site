@@ -6,6 +6,7 @@
   'use strict';
 
   const STORAGE_KEY = 'motion-picks-favorites-v1';
+  const BG_STORAGE_KEY = 'motion-picks-bg-enabled-v1';
 
   const state = {
     region: 'all',
@@ -284,12 +285,125 @@
     });
   }
 
+  // ========== Background video ==========
+  function getEmbedUrl(pick) {
+    const url = pick && pick.videoUrl ? pick.videoUrl : '';
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{6,})/);
+    if (ytMatch) {
+      const id = ytMatch[1];
+      const params = [
+        'autoplay=1', 'mute=1', 'loop=1', 'playlist=' + id,
+        'controls=0', 'showinfo=0', 'modestbranding=1', 'disablekb=1',
+        'fs=0', 'iv_load_policy=3', 'playsinline=1', 'rel=0'
+      ].join('&');
+      return { url: 'https://www.youtube.com/embed/' + id + '?' + params, kind: 'youtube' };
+    }
+    const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeoMatch) {
+      return {
+        url: 'https://player.vimeo.com/video/' + vimeoMatch[1] + '?background=1&autoplay=1&loop=1&muted=1&dnt=1',
+        kind: 'vimeo'
+      };
+    }
+    return null;
+  }
+
+  function pickFeaturedVideo() {
+    const eligible = picks.filter(p => getEmbedUrl(p));
+    if (eligible.length === 0) return null;
+    const latestDate = eligible[0].date;
+    const fromLatest = eligible.filter(p => p.date === latestDate);
+    const pool = fromLatest.length > 0 ? fromLatest : eligible;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function isBgEnabled() {
+    try {
+      const v = localStorage.getItem(BG_STORAGE_KEY);
+      if (v === null) {
+        // Default: ON, unless prefers-reduced-motion
+        return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      }
+      return v === '1';
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function setBgEnabled(enabled) {
+    try {
+      localStorage.setItem(BG_STORAGE_KEY, enabled ? '1' : '0');
+    } catch (e) {}
+    applyBgState(enabled);
+  }
+
+  function applyBgState(enabled) {
+    document.body.classList.toggle('bg-off', !enabled);
+    const wrapper = document.getElementById('bg-video-wrapper');
+    if (enabled) {
+      if (wrapper && !wrapper.dataset.loaded) loadBgVideo();
+    } else {
+      // Stop video to save resources
+      if (wrapper) wrapper.innerHTML = '';
+      if (wrapper) wrapper.dataset.loaded = '';
+      const nowPlaying = document.getElementById('bg-now-playing');
+      if (nowPlaying) nowPlaying.style.display = 'none';
+    }
+    const btn = document.getElementById('bg-toggle');
+    if (btn) {
+      btn.title = enabled ? '背景動画 OFFにする' : '背景動画 ONにする';
+      btn.setAttribute('aria-label', btn.title);
+    }
+  }
+
+  function loadBgVideo() {
+    const wrapper = document.getElementById('bg-video-wrapper');
+    if (!wrapper) return;
+    const pick = pickFeaturedVideo();
+    if (!pick) return;
+    const embed = getEmbedUrl(pick);
+    if (!embed) return;
+
+    const iframe = document.createElement('iframe');
+    iframe.src = embed.url;
+    iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
+    iframe.setAttribute('frameborder', '0');
+    iframe.setAttribute('loading', 'eager');
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.setAttribute('tabindex', '-1');
+    wrapper.innerHTML = '';
+    wrapper.appendChild(iframe);
+    wrapper.dataset.loaded = '1';
+
+    const nowPlaying = document.getElementById('bg-now-playing');
+    const titleEl = document.getElementById('bg-now-playing-title');
+    if (nowPlaying && titleEl) {
+      titleEl.textContent = pick.title + (pick.creator ? ' / ' + pick.creator : '');
+      nowPlaying.style.display = 'inline-flex';
+    }
+  }
+
+  function initBackgroundVideo() {
+    const enabled = isBgEnabled();
+    applyBgState(enabled);
+
+    const btn = document.getElementById('bg-toggle');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const wasOff = document.body.classList.contains('bg-off');
+        setBgEnabled(wasOff); // if was off → enable, if was on → disable
+      });
+    }
+  }
+
   function init() {
     buildChipFilter('genre-filter', getAllGenres(), 'genre');
     buildChipFilter('tech-filter', getAllTechs(), 'tech');
     buildDateFilter();
     attachEventListeners();
     render();
+    initBackgroundVideo();
   }
 
   if (document.readyState === 'loading') {
