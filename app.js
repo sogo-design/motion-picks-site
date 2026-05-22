@@ -9,6 +9,7 @@
   const BG_STORAGE_KEY = 'motion-picks-bg-enabled-v1';
   const SIZE_STORAGE_KEY = 'motion-picks-card-size-v1';
   const TYPE_STORAGE_KEY = 'motion-picks-content-type-v1';
+  const HIDDEN_STORAGE_KEY = 'motion-picks-hidden-v1';
   const VALID_SIZES = ['sm', 'md', 'lg'];
   const VALID_TYPES = ['video', 'graphic'];
 
@@ -19,8 +20,10 @@
     tech: 'all',
     date: 'all',
     favoritesOnly: false,
+    showHidden: false,
     search: '',
     favorites: loadFavorites(),
+    hidden: loadHidden(),
   };
 
   // Normalize picks: default type to 'video' for legacy entries without type field
@@ -59,6 +62,54 @@
     } catch (e) {
       console.warn('Failed to save favorites:', e);
     }
+  }
+
+  function loadHidden() {
+    try {
+      const raw = localStorage.getItem(HIDDEN_STORAGE_KEY);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch (e) {
+      return new Set();
+    }
+  }
+
+  function saveHidden() {
+    try {
+      localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify(Array.from(state.hidden)));
+    } catch (e) {
+      console.warn('Failed to save hidden list:', e);
+    }
+  }
+
+  function showUndoToast(id, title) {
+    const existing = document.getElementById('undo-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'undo-toast';
+    toast.className = 'undo-toast';
+    toast.innerHTML = `
+      <span class="undo-toast-text">「${escapeHtml(title || '作品')}」を非表示にしました</span>
+      <button class="undo-toast-btn" data-id="${escapeHtml(id)}">元に戻す</button>
+    `;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    const timer = setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 250);
+    }, 5000);
+
+    toast.querySelector('.undo-toast-btn').addEventListener('click', e => {
+      clearTimeout(timer);
+      const restoreId = e.target.getAttribute('data-id');
+      state.hidden.delete(restoreId);
+      saveHidden();
+      render();
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 250);
+    });
   }
 
   function uniq(arr) {
@@ -112,6 +163,12 @@
   function filterPicks() {
     return picks.filter(p => {
       if (p.type !== state.type) return false;
+      // Show-hidden mode: ONLY show hidden items in current type
+      if (state.showHidden) {
+        if (!state.hidden.has(p.id)) return false;
+      } else {
+        if (state.hidden.has(p.id)) return false;
+      }
       if (state.region !== 'all' && p.region !== state.region) return false;
       if (state.genre !== 'all' && !(p.genre || []).includes(state.genre)) return false;
       if (state.tech !== 'all' && !(p.techniques || []).includes(state.tech)) return false;
@@ -161,15 +218,26 @@
         <div class="card-thumbnail ${p.thumbnail ? '' : 'no-image'}" data-url="${escapeHtml(p.videoUrl || '')}">
           ${thumb}
           <span class="card-region-badge ${regionClass}">${regionLabel}</span>
-          <button class="card-favorite ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" title="お気に入り" aria-label="お気に入り">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <path d="M12 2.5l2.92 6.36 6.97.65-5.27 4.78 1.59 6.85L12 17.77 5.79 21.14l1.59-6.85L2.11 9.51l6.97-.65L12 2.5z"
-                fill="${isFav ? 'currentColor' : 'none'}"
-                stroke="currentColor"
-                stroke-width="1.6"
-                stroke-linejoin="round"/>
-            </svg>
-          </button>
+          <div class="card-actions">
+            <button class="card-favorite ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" title="お気に入り" aria-label="お気に入り">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <path d="M12 2.5l2.92 6.36 6.97.65-5.27 4.78 1.59 6.85L12 17.77 5.79 21.14l1.59-6.85L2.11 9.51l6.97-.65L12 2.5z"
+                  fill="${isFav ? 'currentColor' : 'none'}"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="card-delete" data-id="${escapeHtml(p.id)}" data-title="${escapeHtml(p.title)}" title="非表示にする" aria-label="非表示">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/>
+                <path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </button>
+          </div>
           ${p.platform ? `<span class="card-platform-badge">${escapeHtml(p.platform)}</span>` : ''}
         </div>
         <div class="card-body">
@@ -219,6 +287,18 @@
 
     const countEl = document.getElementById('result-count-num');
     if (countEl) countEl.textContent = filtered.length;
+
+    // Update hidden count badge
+    const hiddenInCurrentType = currentTypePicks.filter(p => state.hidden.has(p.id)).length;
+    const hiddenBadge = document.getElementById('hidden-count-badge');
+    if (hiddenBadge) {
+      if (hiddenInCurrentType > 0) {
+        hiddenBadge.textContent = hiddenInCurrentType;
+        hiddenBadge.style.display = 'inline-flex';
+      } else {
+        hiddenBadge.style.display = 'none';
+      }
+    }
   }
 
   function buildChipFilter(containerId, items, attr) {
@@ -285,6 +365,15 @@
       render();
     });
 
+    const showHiddenEl = document.getElementById('show-hidden');
+    if (showHiddenEl) {
+      showHiddenEl.addEventListener('change', e => {
+        state.showHidden = e.target.checked;
+        document.body.classList.toggle('show-hidden-mode', state.showHidden);
+        render();
+      });
+    }
+
     let searchTimer;
     document.getElementById('search-input').addEventListener('input', e => {
       clearTimeout(searchTimer);
@@ -312,7 +401,7 @@
       render();
     });
 
-    // Click delegation for cards (favorite button + thumbnail click)
+    // Click delegation for cards (favorite + delete + thumbnail click)
     document.getElementById('card-grid').addEventListener('click', e => {
       const favBtn = e.target.closest('.card-favorite');
       if (favBtn) {
@@ -325,6 +414,26 @@
         }
         saveFavorites();
         render();
+        return;
+      }
+
+      const delBtn = e.target.closest('.card-delete');
+      if (delBtn) {
+        e.stopPropagation();
+        const id = delBtn.getAttribute('data-id');
+        const title = delBtn.getAttribute('data-title');
+        if (state.showHidden) {
+          // In show-hidden mode, this button restores
+          state.hidden.delete(id);
+          saveHidden();
+          render();
+        } else {
+          // Normal mode: hide with undo
+          state.hidden.add(id);
+          saveHidden();
+          render();
+          showUndoToast(id, title);
+        }
         return;
       }
 
@@ -457,6 +566,7 @@
     state.tech = 'all';
     state.date = 'all';
     state.favoritesOnly = false;
+    state.showHidden = false;
     state.search = '';
     document.querySelectorAll('.chip-group').forEach(group => {
       group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
@@ -467,6 +577,9 @@
     if (dateFilter) dateFilter.value = 'all';
     const favOnly = document.getElementById('favorites-only');
     if (favOnly) favOnly.checked = false;
+    const showHiddenEl = document.getElementById('show-hidden');
+    if (showHiddenEl) showHiddenEl.checked = false;
+    document.body.classList.remove('show-hidden-mode');
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = '';
   }
