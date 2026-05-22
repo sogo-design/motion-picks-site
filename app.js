@@ -20,7 +20,6 @@
     tech: 'all',
     date: 'all',
     favoritesOnly: false,
-    showHidden: false,
     search: '',
     favorites: loadFavorites(),
     hidden: loadHidden(),
@@ -163,12 +162,8 @@
   function filterPicks() {
     return picks.filter(p => {
       if (p.type !== state.type) return false;
-      // Show-hidden mode: ONLY show hidden items in current type
-      if (state.showHidden) {
-        if (!state.hidden.has(p.id)) return false;
-      } else {
-        if (state.hidden.has(p.id)) return false;
-      }
+      // Hidden items are permanently excluded from view
+      if (state.hidden.has(p.id)) return false;
       if (state.region !== 'all' && p.region !== state.region) return false;
       if (state.genre !== 'all' && !(p.genre || []).includes(state.genre)) return false;
       if (state.tech !== 'all' && !(p.techniques || []).includes(state.tech)) return false;
@@ -288,17 +283,6 @@
     const countEl = document.getElementById('result-count-num');
     if (countEl) countEl.textContent = filtered.length;
 
-    // Update hidden count badge
-    const hiddenInCurrentType = currentTypePicks.filter(p => state.hidden.has(p.id)).length;
-    const hiddenBadge = document.getElementById('hidden-count-badge');
-    if (hiddenBadge) {
-      if (hiddenInCurrentType > 0) {
-        hiddenBadge.textContent = hiddenInCurrentType;
-        hiddenBadge.style.display = 'inline-flex';
-      } else {
-        hiddenBadge.style.display = 'none';
-      }
-    }
   }
 
   function buildChipFilter(containerId, items, attr) {
@@ -365,14 +349,6 @@
       render();
     });
 
-    const showHiddenEl = document.getElementById('show-hidden');
-    if (showHiddenEl) {
-      showHiddenEl.addEventListener('change', e => {
-        state.showHidden = e.target.checked;
-        document.body.classList.toggle('show-hidden-mode', state.showHidden);
-        render();
-      });
-    }
 
     let searchTimer;
     document.getElementById('search-input').addEventListener('input', e => {
@@ -422,18 +398,10 @@
         e.stopPropagation();
         const id = delBtn.getAttribute('data-id');
         const title = delBtn.getAttribute('data-title');
-        if (state.showHidden) {
-          // In show-hidden mode, this button restores
-          state.hidden.delete(id);
-          saveHidden();
-          render();
-        } else {
-          // Normal mode: hide with undo
-          state.hidden.add(id);
-          saveHidden();
-          render();
-          showUndoToast(id, title);
-        }
+        state.hidden.add(id);
+        saveHidden();
+        render();
+        showUndoToast(id, title);
         return;
       }
 
@@ -566,7 +534,6 @@
     state.tech = 'all';
     state.date = 'all';
     state.favoritesOnly = false;
-    state.showHidden = false;
     state.search = '';
     document.querySelectorAll('.chip-group').forEach(group => {
       group.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
@@ -577,9 +544,6 @@
     if (dateFilter) dateFilter.value = 'all';
     const favOnly = document.getElementById('favorites-only');
     if (favOnly) favOnly.checked = false;
-    const showHiddenEl = document.getElementById('show-hidden');
-    if (showHiddenEl) showHiddenEl.checked = false;
-    document.body.classList.remove('show-hidden-mode');
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = '';
   }

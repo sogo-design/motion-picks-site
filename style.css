@@ -1263,43 +1263,6 @@ body.bg-off .bg-toggle {
   color: #ff6b7a;
 }
 
-/* Show-hidden mode: delete button becomes restore */
-body.show-hidden-mode .card-delete {
-  color: var(--accent-strong);
-  opacity: 1;
-  transform: scale(1);
-}
-
-body.show-hidden-mode .card-delete:hover {
-  color: #4ade80;
-}
-
-body.show-hidden-mode .card {
-  border-color: rgba(255, 107, 122, 0.3);
-  opacity: 0.85;
-}
-
-body.show-hidden-mode .card:hover {
-  opacity: 1;
-}
-
-/* Hidden count badge */
-.hidden-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 999px;
-  background: var(--jp);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
-  margin-left: 6px;
-  font-feature-settings: "tnum" 1;
-}
-
 /* Undo toast */
 .undo-toast {
   position: fixed;
