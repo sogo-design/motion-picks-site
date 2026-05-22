@@ -276,13 +276,14 @@
     }
 
     const currentTypePicks = picksOfType(state.type);
-    document.getElementById('stat-total').textContent = currentTypePicks.length;
-    document.getElementById('stat-favorites').textContent = state.favorites.size;
-    document.getElementById('stat-days').textContent = uniq(currentTypePicks.map(p => p.date)).length;
+    const visiblePicks = currentTypePicks.filter(p => !state.hidden.has(p.id));
+    const visibleFavorites = visiblePicks.filter(p => state.favorites.has(p.id)).length;
+
+    document.getElementById('stat-total').textContent = visiblePicks.length;
+    document.getElementById('stat-favorites').textContent = visibleFavorites;
 
     const countEl = document.getElementById('result-count-num');
     if (countEl) countEl.textContent = filtered.length;
-
   }
 
   function buildChipFilter(containerId, items, attr) {
