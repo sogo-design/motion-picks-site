@@ -414,21 +414,29 @@
     });
   }
 
-  // ========== Background video ==========
+  // ========== Background video (continuous rotation) ==========
+  const BG_ROTATION_MS = 75 * 1000; // 75秒ごとに次の動画へ
+  let bgQueue = [];
+  let bgRotationTimer = null;
+  let bgCurrentIdx = 0;
+
   function getEmbedUrl(pick) {
     const url = pick && pick.videoUrl ? pick.videoUrl : '';
     const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{6,})/);
     if (ytMatch) {
       const id = ytMatch[1];
+      // start=0 で先頭、loop+playlist=ID で同一動画ループ、enablejsapi で将来のAPI制御に備える
       const params = [
         'autoplay=1', 'mute=1', 'loop=1', 'playlist=' + id,
         'controls=0', 'showinfo=0', 'modestbranding=1', 'disablekb=1',
-        'fs=0', 'iv_load_policy=3', 'playsinline=1', 'rel=0'
+        'fs=0', 'iv_load_policy=3', 'playsinline=1', 'rel=0',
+        'enablejsapi=1'
       ].join('&');
       return { url: 'https://www.youtube.com/embed/' + id + '?' + params, kind: 'youtube' };
     }
     const vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
     if (vimeoMatch) {
+      // background=1 は Vimeo の専用バックグラウンドモード（ループ・無音・コントロール無し）
       return {
         url: 'https://player.vimeo.com/video/' + vimeoMatch[1] + '?background=1&autoplay=1&loop=1&muted=1&dnt=1',
         kind: 'vimeo'
@@ -437,22 +445,29 @@
     return null;
   }
 
-  function pickFeaturedVideo() {
+  function shuffleArray(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function buildBgQueue() {
     // BG video always uses video-type picks regardless of current tab
-    const videoOnly = picks.filter(p => p.type === 'video');
-    const eligible = videoOnly.filter(p => getEmbedUrl(p));
-    if (eligible.length === 0) return null;
-    const latestDate = eligible[0].date;
-    const fromLatest = eligible.filter(p => p.date === latestDate);
-    const pool = fromLatest.length > 0 ? fromLatest : eligible;
-    return pool[Math.floor(Math.random() * pool.length)];
+    const videoOnly = picks.filter(p => p.type === 'video' && getEmbedUrl(p));
+    if (videoOnly.length === 0) return [];
+    // Vimeo (background=1) is more reliable; put first when available
+    const vimeoFirst = videoOnly.filter(p => /vimeo\.com/.test(p.videoUrl));
+    const ytPool = videoOnly.filter(p => !/vimeo\.com/.test(p.videoUrl));
+    return shuffleArray(vimeoFirst).concat(shuffleArray(ytPool));
   }
 
   function isBgEnabled() {
     try {
       const v = localStorage.getItem(BG_STORAGE_KEY);
       if (v === null) {
-        // Default: ON, unless prefers-reduced-motion
         return !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       }
       return v === '1';
@@ -468,13 +483,46 @@
     applyBgState(enabled);
   }
 
+  function stopBgRotation() {
+    if (bgRotationTimer) {
+      clearTimeout(bgRotationTimer);
+      bgRotationTimer = null;
+    }
+  }
+
+  function scheduleNextRotation() {
+    stopBgRotation();
+    bgRotationTimer = setTimeout(() => {
+      if (document.body.classList.contains('bg-off')) return;
+      if (document.hidden) {
+        // タブが非表示なら次のタイミングまでスキップ
+        scheduleNextRotation();
+        return;
+      }
+      bgCurrentIdx++;
+      if (bgCurrentIdx >= bgQueue.length) {
+        // 一巡したら再シャッフルして繰り返し
+        bgQueue = buildBgQueue();
+        bgCurrentIdx = 0;
+      }
+      renderBgVideo(bgQueue[bgCurrentIdx]);
+      scheduleNextRotation();
+    }, BG_ROTATION_MS);
+  }
+
   function applyBgState(enabled) {
     document.body.classList.toggle('bg-off', !enabled);
     const wrapper = document.getElementById('bg-video-wrapper');
     if (enabled) {
-      if (wrapper && !wrapper.dataset.loaded) loadBgVideo();
+      // Build queue + start rotation
+      bgQueue = buildBgQueue();
+      bgCurrentIdx = 0;
+      if (bgQueue.length > 0) {
+        renderBgVideo(bgQueue[0]);
+        scheduleNextRotation();
+      }
     } else {
-      // Stop video to save resources
+      stopBgRotation();
       if (wrapper) wrapper.innerHTML = '';
       if (wrapper) wrapper.dataset.loaded = '';
       const nowPlaying = document.getElementById('bg-now-playing');
@@ -487,11 +535,9 @@
     }
   }
 
-  function loadBgVideo() {
+  function renderBgVideo(pick) {
     const wrapper = document.getElementById('bg-video-wrapper');
-    if (!wrapper) return;
-    const pick = pickFeaturedVideo();
-    if (!pick) return;
+    if (!wrapper || !pick) return;
     const embed = getEmbedUrl(pick);
     if (!embed) return;
 
@@ -503,9 +549,18 @@
     iframe.setAttribute('loading', 'eager');
     iframe.setAttribute('aria-hidden', 'true');
     iframe.setAttribute('tabindex', '-1');
+
+    // フェードイン効果用
+    iframe.style.opacity = '0';
+    iframe.style.transition = 'opacity 0.8s ease';
+
     wrapper.innerHTML = '';
     wrapper.appendChild(iframe);
     wrapper.dataset.loaded = '1';
+
+    requestAnimationFrame(() => {
+      iframe.style.opacity = '1';
+    });
 
     const nowPlaying = document.getElementById('bg-now-playing');
     const titleEl = document.getElementById('bg-now-playing-title');
@@ -523,9 +578,16 @@
     if (btn) {
       btn.addEventListener('click', () => {
         const wasOff = document.body.classList.contains('bg-off');
-        setBgEnabled(wasOff); // if was off → enable, if was on → disable
+        setBgEnabled(wasOff);
       });
     }
+
+    // タブ復帰時にもループを再起動（タイマーがバックグラウンドで止まることがあるため）
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !document.body.classList.contains('bg-off')) {
+        if (!bgRotationTimer) scheduleNextRotation();
+      }
+    });
   }
 
   // ========== Content type tabs ==========
