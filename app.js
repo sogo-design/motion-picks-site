@@ -184,8 +184,6 @@
 
   function renderCard(p, index) {
     const isFav = state.favorites.has(p.id);
-    const regionLabel = p.region === 'jp' ? 'JP / 国内' : 'INT / 海外';
-    const regionClass = p.region === 'jp' ? 'jp' : 'global';
     const idParts = (p.id || '').split('-');
     const serialNum = idParts[idParts.length - 1] || String(index + 1).padStart(2, '0');
     const thumb = p.thumbnail
@@ -212,7 +210,6 @@
       <article class="card" data-id="${escapeHtml(p.id)}">
         <div class="card-thumbnail ${p.thumbnail ? '' : 'no-image'}" data-url="${escapeHtml(p.videoUrl || '')}">
           ${thumb}
-          <span class="card-region-badge ${regionClass}">${regionLabel}</span>
           <div class="card-actions">
             <button class="card-favorite ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" title="お気に入り" aria-label="お気に入り">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
@@ -238,7 +235,7 @@
         <div class="card-body">
           <div class="card-serial">
             <span class="card-serial-num">${escapeHtml(serialNum)}</span>
-            <span class="card-serial-region">${p.region === 'jp' ? 'JP' : 'GLOBAL'}</span>
+            <span class="card-serial-platform">${escapeHtml(p.platform || '')}</span>
           </div>
           <h3 class="card-title">${escapeHtml(p.title)}</h3>
           ${p.creator ? `<p class="card-creator">${escapeHtml(p.creator)}</p>` : ''}
@@ -316,14 +313,6 @@
   }
 
   function attachEventListeners() {
-    document.getElementById('region-filter').addEventListener('click', e => {
-      if (e.target.tagName !== 'BUTTON') return;
-      document.querySelectorAll('#region-filter .chip').forEach(c => c.classList.remove('active'));
-      e.target.classList.add('active');
-      state.region = e.target.getAttribute('data-region');
-      render();
-    });
-
     document.getElementById('genre-filter').addEventListener('click', e => {
       if (e.target.tagName !== 'BUTTON') return;
       document.querySelectorAll('#genre-filter .chip').forEach(c => c.classList.remove('active'));
