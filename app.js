@@ -10,6 +10,7 @@
   const SIZE_STORAGE_KEY = 'motion-picks-card-size-v1';
   const TYPE_STORAGE_KEY = 'motion-picks-content-type-v1';
   const HIDDEN_STORAGE_KEY = 'motion-picks-hidden-v1';
+  const USER_ENTRIES_KEY = 'motion-picks-user-entries-v1';
   const VALID_SIZES = ['sm', 'md', 'lg'];
   const VALID_TYPES = ['video', 'graphic'];
 
@@ -25,12 +26,35 @@
     hidden: loadHidden(),
   };
 
-  // Normalize picks: default type to 'video' for legacy entries without type field
-  const picks = (window.picksData || []).map(p => {
-    return Object.assign({ type: 'video' }, p);
-  }).sort((a, b) => {
-    return (b.date || '').localeCompare(a.date || '');
-  });
+  // User-added entries (stored in this browser's localStorage)
+  let userEntries = loadUserEntries();
+
+  // Combined pick list (site data + user entries), rebuilt whenever user entries change
+  let picks = buildPicks();
+
+  function buildPicks() {
+    const siteData = (window.picksData || []).map(p => Object.assign({ type: 'video' }, p));
+    const combined = userEntries.concat(siteData);
+    return combined.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  function loadUserEntries() {
+    try {
+      const raw = localStorage.getItem(USER_ENTRIES_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveUserEntries() {
+    try {
+      localStorage.setItem(USER_ENTRIES_KEY, JSON.stringify(userEntries));
+    } catch (e) {
+      console.warn('Failed to save user entries:', e);
+    }
+  }
 
   function loadType() {
     try {
@@ -80,7 +104,7 @@
     }
   }
 
-  function showUndoToast(id, title) {
+  function showToast(message, onUndo) {
     const existing = document.getElementById('undo-toast');
     if (existing) existing.remove();
 
@@ -88,8 +112,8 @@
     toast.id = 'undo-toast';
     toast.className = 'undo-toast';
     toast.innerHTML = `
-      <span class="undo-toast-text">「${escapeHtml(title || '作品')}」を非表示にしました</span>
-      <button class="undo-toast-btn" data-id="${escapeHtml(id)}">元に戻す</button>
+      <span class="undo-toast-text">${escapeHtml(message)}</span>
+      ${onUndo ? '<button class="undo-toast-btn">元に戻す</button>' : ''}
     `;
     document.body.appendChild(toast);
 
@@ -100,15 +124,15 @@
       setTimeout(() => toast.remove(), 250);
     }, 5000);
 
-    toast.querySelector('.undo-toast-btn').addEventListener('click', e => {
-      clearTimeout(timer);
-      const restoreId = e.target.getAttribute('data-id');
-      state.hidden.delete(restoreId);
-      saveHidden();
-      render();
-      toast.classList.remove('show');
-      setTimeout(() => toast.remove(), 250);
-    });
+    const btn = toast.querySelector('.undo-toast-btn');
+    if (btn && onUndo) {
+      btn.addEventListener('click', () => {
+        clearTimeout(timer);
+        onUndo();
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 250);
+      });
+    }
   }
 
   function uniq(arr) {
@@ -184,8 +208,9 @@
 
   function renderCard(p, index) {
     const isFav = state.favorites.has(p.id);
+    const isUser = !!p.userAdded;
     const idParts = (p.id || '').split('-');
-    const serialNum = idParts[idParts.length - 1] || String(index + 1).padStart(2, '0');
+    const serialNum = isUser ? 'MY' : (idParts[idParts.length - 1] || String(index + 1).padStart(2, '0'));
     const thumb = p.thumbnail
       ? `<img src="${escapeHtml(p.thumbnail)}" alt="${escapeHtml(p.title)}" loading="lazy" onerror="this.parentElement.classList.add('no-image'); this.remove();">`
       : '<svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="14" width="48" height="36" rx="3"/><line x1="20" y1="14" x2="20" y2="50"/><line x1="44" y1="14" x2="44" y2="50"/><line x1="8" y1="22" x2="20" y2="22"/><line x1="8" y1="42" x2="20" y2="42"/><line x1="44" y1="22" x2="56" y2="22"/><line x1="44" y1="42" x2="56" y2="42"/></svg>';
@@ -220,7 +245,7 @@
                   stroke-linejoin="round"/>
               </svg>
             </button>
-            <button class="card-delete" data-id="${escapeHtml(p.id)}" data-title="${escapeHtml(p.title)}" title="非表示にする" aria-label="非表示">
+            <button class="card-delete" data-id="${escapeHtml(p.id)}" data-title="${escapeHtml(p.title)}" data-user="${isUser ? '1' : '0'}" title="${isUser ? '削除する' : '非表示にする'}" aria-label="${isUser ? '削除' : '非表示'}">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <polyline points="3 6 5 6 21 6"/>
                 <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
@@ -230,11 +255,12 @@
               </svg>
             </button>
           </div>
+          ${isUser ? '<span class="card-mypick-badge">MY PICK</span>' : ''}
           ${p.platform ? `<span class="card-platform-badge">${escapeHtml(p.platform)}</span>` : ''}
         </div>
         <div class="card-body">
           <div class="card-serial">
-            <span class="card-serial-num">${escapeHtml(serialNum)}</span>
+            <span class="card-serial-num ${isUser ? 'is-user' : ''}">${escapeHtml(serialNum)}</span>
             <span class="card-serial-platform">${escapeHtml(p.platform || '')}</span>
           </div>
           <h3 class="card-title">${escapeHtml(p.title)}</h3>
@@ -388,10 +414,34 @@
         e.stopPropagation();
         const id = delBtn.getAttribute('data-id');
         const title = delBtn.getAttribute('data-title');
-        state.hidden.add(id);
-        saveHidden();
-        render();
-        showUndoToast(id, title);
+        const isUser = delBtn.getAttribute('data-user') === '1';
+        if (isUser) {
+          // User-added entry: remove permanently from localStorage (restorable via undo)
+          const removed = userEntries.find(en => en.id === id);
+          userEntries = userEntries.filter(en => en.id !== id);
+          saveUserEntries();
+          picks = buildPicks();
+          rebuildFiltersForType();
+          render();
+          showToast('「' + (title || '作品') + '」を削除しました', function() {
+            if (removed) {
+              userEntries.unshift(removed);
+              saveUserEntries();
+              picks = buildPicks();
+              rebuildFiltersForType();
+              render();
+            }
+          });
+        } else {
+          state.hidden.add(id);
+          saveHidden();
+          render();
+          showToast('「' + (title || '作品') + '」を非表示にしました', function() {
+            state.hidden.delete(id);
+            saveHidden();
+            render();
+          });
+        }
         return;
       }
 
@@ -600,6 +650,13 @@
     if (searchInput) searchInput.value = '';
   }
 
+  // Rebuild the genre/tech/date filter chips for the current type
+  function rebuildFiltersForType() {
+    buildChipFilter('genre-filter', getAllGenres(), 'genre');
+    buildChipFilter('tech-filter', getAllTechs(), 'tech');
+    buildDateFilter();
+  }
+
   function switchType(newType) {
     if (VALID_TYPES.indexOf(newType) === -1) return;
     if (state.type === newType) return;
@@ -615,9 +672,7 @@
 
     // Reset filters and rebuild for new type
     resetFilters();
-    buildChipFilter('genre-filter', getAllGenres(), 'genre');
-    buildChipFilter('tech-filter', getAllTechs(), 'tech');
-    buildDateFilter();
+    rebuildFiltersForType();
     render();
     updateHeroMeta();
   }
@@ -686,6 +741,153 @@
     }
   }
 
+  // ========== Add your own pick (user entries) ==========
+
+  // Parse a media URL → platform name + thumbnail URL
+  function parseMediaUrl(url) {
+    url = (url || '').trim();
+    const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{6,})/);
+    if (yt) {
+      return { platform: 'YouTube', thumbnail: 'https://img.youtube.com/vi/' + yt[1] + '/mqdefault.jpg' };
+    }
+    const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vimeo) {
+      return { platform: 'Vimeo', thumbnail: 'https://vumbnail.com/' + vimeo[1] + '.jpg' };
+    }
+    if (/(?:twitter\.com|x\.com)\//.test(url)) return { platform: 'X', thumbnail: '' };
+    if (/tiktok\.com\//.test(url)) return { platform: 'TikTok', thumbnail: '' };
+    if (/instagram\.com\//.test(url)) return { platform: 'Instagram', thumbnail: '' };
+    if (/behance\.net\//.test(url)) return { platform: 'Behance', thumbnail: '' };
+    if (/dribbble\.com\//.test(url)) return { platform: 'Dribbble', thumbnail: '' };
+    if (/pinterest\.[a-z.]+\//.test(url)) return { platform: 'Pinterest', thumbnail: '' };
+    return { platform: 'Web', thumbnail: '' };
+  }
+
+  function splitTags(value) {
+    if (!value) return [];
+    return value.split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 6);
+  }
+
+  function todayStr() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return d.getFullYear() + '-' + m + '-' + day;
+  }
+
+  function makeUserId() {
+    return 'user-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
+  }
+
+  function addUserEntry(data) {
+    const meta = parseMediaUrl(data.url);
+    const entry = {
+      id: makeUserId(),
+      date: data.date || todayStr(),
+      type: VALID_TYPES.indexOf(data.type) !== -1 ? data.type : state.type,
+      region: 'jp',
+      userAdded: true,
+      title: data.title,
+      creator: data.creator || '',
+      platform: data.platform || meta.platform,
+      videoUrl: data.url,
+      creatorUrl: data.creatorUrl || '',
+      articleUrl: '',
+      publishedDate: '',
+      genre: splitTags(data.genre),
+      techniques: splitTags(data.techniques),
+      thumbnail: (data.thumbnail || '').trim() || meta.thumbnail,
+      notes: data.notes || ''
+    };
+    userEntries.unshift(entry);
+    saveUserEntries();
+    picks = buildPicks();
+    rebuildFiltersForType();
+    render();
+    return entry;
+  }
+
+  function openAddModal() {
+    const modal = document.getElementById('add-modal');
+    if (!modal) return;
+    // Reflect current tab in the type selector
+    const typeSel = document.getElementById('add-type');
+    if (typeSel) typeSel.value = state.type;
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    const urlInput = document.getElementById('add-url');
+    if (urlInput) setTimeout(() => urlInput.focus(), 50);
+  }
+
+  function closeAddModal() {
+    const modal = document.getElementById('add-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    const form = document.getElementById('add-form');
+    if (form) form.reset();
+  }
+
+  function initAddEntry() {
+    const openBtn = document.getElementById('add-entry-btn');
+    if (openBtn) openBtn.addEventListener('click', openAddModal);
+
+    const modal = document.getElementById('add-modal');
+    if (!modal) return;
+
+    // Close on backdrop click, close button, or Escape
+    modal.addEventListener('click', e => {
+      if (e.target === modal || e.target.closest('[data-close-modal]')) closeAddModal();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal.classList.contains('open')) closeAddModal();
+    });
+
+    const form = document.getElementById('add-form');
+    if (form) {
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const url = document.getElementById('add-url').value.trim();
+        const title = document.getElementById('add-title').value.trim();
+        if (!url || !title) return;
+        const entry = addUserEntry({
+          url: url,
+          title: title,
+          creator: document.getElementById('add-creator').value,
+          creatorUrl: document.getElementById('add-creator-url').value,
+          genre: document.getElementById('add-genre').value,
+          techniques: document.getElementById('add-tech').value,
+          thumbnail: document.getElementById('add-thumb').value,
+          notes: document.getElementById('add-notes').value,
+          type: document.getElementById('add-type').value
+        });
+        closeAddModal();
+        // If the added entry belongs to the other tab, offer to switch
+        if (entry.type !== state.type) {
+          switchType(entry.type);
+        }
+        showToast('「' + (entry.title || '作品') + '」を登録しました（このブラウザに保存）');
+      });
+    }
+
+    // Live thumbnail preview when URL changes
+    const urlInput = document.getElementById('add-url');
+    const preview = document.getElementById('add-thumb-preview');
+    if (urlInput && preview) {
+      urlInput.addEventListener('input', () => {
+        const meta = parseMediaUrl(urlInput.value);
+        const platLabel = document.getElementById('add-detected-platform');
+        if (platLabel) platLabel.textContent = urlInput.value.trim() ? meta.platform : '—';
+        if (meta.thumbnail) {
+          preview.src = meta.thumbnail;
+          preview.style.display = 'block';
+        } else {
+          preview.style.display = 'none';
+        }
+      });
+    }
+  }
+
   function init() {
     initTabs();
     buildChipFilter('genre-filter', getAllGenres(), 'genre');
@@ -695,6 +897,7 @@
     render();
     initBackgroundVideo();
     initSizeToggle();
+    initAddEntry();
     updateHeroMeta();
   }
 

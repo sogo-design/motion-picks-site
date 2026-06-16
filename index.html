@@ -17,6 +17,13 @@
     <div class="header-inner">
       <h1>Daily Motion Graphics Picks</h1>
       <div class="header-right">
+        <button id="add-entry-btn" class="add-entry-btn" title="自分の動画を登録" aria-label="自分の動画を登録">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>登録</span>
+        </button>
         <button id="bg-toggle" class="bg-toggle" title="背景動画 ON/OFF" aria-label="背景動画 ON/OFF">
           <svg class="bg-toggle-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -191,6 +198,71 @@
       <p>毎朝10時に自動更新 · データは <code>data.js</code> に蓄積</p>
     </div>
   </footer>
+
+  <!-- Add-your-own-pick modal -->
+  <div id="add-modal" class="add-modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+    <div class="add-modal-panel">
+      <div class="add-modal-header">
+        <h2 id="add-modal-title">自分の動画を登録</h2>
+        <button class="add-modal-close" data-close-modal aria-label="閉じる">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="6" y1="6" x2="18" y2="18"/>
+            <line x1="18" y1="6" x2="6" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <p class="add-modal-note">サイト外で見つけたお気に入りを登録できます。<strong>このブラウザにのみ保存</strong>され、自動更新では消えません。</p>
+      <form id="add-form" class="add-form">
+        <div class="add-field">
+          <label for="add-type">タブ</label>
+          <select id="add-type">
+            <option value="video">MOTION（映像）</option>
+            <option value="graphic">GRAPHIC（グラフィック）</option>
+          </select>
+        </div>
+        <div class="add-field">
+          <label for="add-url">URL <span class="req">必須</span></label>
+          <input type="url" id="add-url" placeholder="https://www.youtube.com/watch?v=... / vimeo / X / Behance 等" required />
+          <span class="add-detected">検出: <span id="add-detected-platform">—</span></span>
+          <img id="add-thumb-preview" class="add-thumb-preview" alt="サムネイルプレビュー" style="display:none;" />
+        </div>
+        <div class="add-field">
+          <label for="add-title">タイトル <span class="req">必須</span></label>
+          <input type="text" id="add-title" placeholder="作品タイトル" required />
+        </div>
+        <div class="add-field">
+          <label for="add-creator">制作者・スタジオ</label>
+          <input type="text" id="add-creator" placeholder="作家名 / スタジオ名" />
+        </div>
+        <div class="add-field">
+          <label for="add-creator-url">制作者ページURL</label>
+          <input type="url" id="add-creator-url" placeholder="https://...（任意）" />
+        </div>
+        <div class="add-field-row">
+          <div class="add-field">
+            <label for="add-genre">ジャンル</label>
+            <input type="text" id="add-genre" placeholder="CM, MV（カンマ区切り）" />
+          </div>
+          <div class="add-field">
+            <label for="add-tech">技術・スタイル</label>
+            <input type="text" id="add-tech" placeholder="3DCG, 作字（カンマ区切り）" />
+          </div>
+        </div>
+        <div class="add-field">
+          <label for="add-thumb">サムネイル画像URL</label>
+          <input type="url" id="add-thumb" placeholder="自動取得できない場合に手動指定（任意）" />
+        </div>
+        <div class="add-field">
+          <label for="add-notes">メモ</label>
+          <textarea id="add-notes" rows="2" placeholder="注目ポイントなど（任意）"></textarea>
+        </div>
+        <div class="add-modal-actions">
+          <button type="button" class="add-btn-cancel" data-close-modal>キャンセル</button>
+          <button type="submit" class="add-btn-submit">登録する</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="data.js"></script>
   <script src="app.js"></script>
