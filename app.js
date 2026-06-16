@@ -768,6 +768,32 @@
     return value.split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).slice(0, 6);
   }
 
+  // Holds the most recent auto-fetched metadata for the URL in the add form
+  let lastFetchedMeta = null;
+
+  // Fetch title / author / thumbnail for a URL using oEmbed (via CORS-enabled noembed.com),
+  // with direct fallbacks for YouTube/Vimeo thumbnails.
+  function fetchMeta(url) {
+    const local = parseMediaUrl(url);
+    // noembed supports YouTube, Vimeo, X/Twitter, TikTok, SoundCloud, and many more
+    return fetch('https://noembed.com/embed?url=' + encodeURIComponent(url))
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => {
+        if (j && !j.error) {
+          return {
+            title: j.title || '',
+            creator: j.author_name || '',
+            creatorUrl: j.author_url || '',
+            thumbnail: j.thumbnail_url || local.thumbnail || '',
+            platform: j.provider_name || local.platform,
+            ok: true
+          };
+        }
+        return { title: '', creator: '', creatorUrl: '', thumbnail: local.thumbnail, platform: local.platform, ok: false };
+      })
+      .catch(() => ({ title: '', creator: '', creatorUrl: '', thumbnail: local.thumbnail, platform: local.platform, ok: false }));
+  }
+
   function todayStr() {
     const d = new Date();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -781,22 +807,29 @@
 
   function addUserEntry(data) {
     const meta = parseMediaUrl(data.url);
+    const fetched = lastFetchedMeta && lastFetchedMeta.url === data.url ? lastFetchedMeta : null;
+    // Prefer manual input, then auto-fetched, then URL-derived fallback
+    const title = (data.title || '').trim() || (fetched && fetched.title) || '';
+    const creator = (data.creator || '').trim() || (fetched && fetched.creator) || '';
+    const creatorUrl = (data.creatorUrl || '').trim() || (fetched && fetched.creatorUrl) || '';
+    const thumbnail = (data.thumbnail || '').trim() || (fetched && fetched.thumbnail) || meta.thumbnail;
+    const platform = (fetched && fetched.platform) || meta.platform;
     const entry = {
       id: makeUserId(),
       date: data.date || todayStr(),
       type: VALID_TYPES.indexOf(data.type) !== -1 ? data.type : state.type,
       region: 'jp',
       userAdded: true,
-      title: data.title,
-      creator: data.creator || '',
-      platform: data.platform || meta.platform,
+      title: title || data.url,
+      creator: creator,
+      platform: platform,
       videoUrl: data.url,
-      creatorUrl: data.creatorUrl || '',
+      creatorUrl: creatorUrl,
       articleUrl: '',
       publishedDate: '',
       genre: splitTags(data.genre),
       techniques: splitTags(data.techniques),
-      thumbnail: (data.thumbnail || '').trim() || meta.thumbnail,
+      thumbnail: thumbnail,
       notes: data.notes || ''
     };
     userEntries.unshift(entry);
@@ -826,6 +859,10 @@
     modal.setAttribute('aria-hidden', 'true');
     const form = document.getElementById('add-form');
     if (form) form.reset();
+    lastFetchedMeta = null;
+    setFetchStatus('idle');
+    const details = document.getElementById('add-details');
+    if (details) details.open = false;
   }
 
   function initAddEntry() {
@@ -848,11 +885,20 @@
       form.addEventListener('submit', e => {
         e.preventDefault();
         const url = document.getElementById('add-url').value.trim();
-        const title = document.getElementById('add-title').value.trim();
-        if (!url || !title) return;
+        if (!url) return;
+        const manualTitle = document.getElementById('add-title').value.trim();
+        const autoTitle = (lastFetchedMeta && lastFetchedMeta.url === url) ? lastFetchedMeta.title : '';
+        if (!manualTitle && !autoTitle) {
+          // No title available — ask the user to fill it manually
+          openDetails();
+          const t = document.getElementById('add-title');
+          t.setAttribute('placeholder', '自動取得できませんでした。タイトルを入力してください');
+          t.focus();
+          return;
+        }
         const entry = addUserEntry({
           url: url,
-          title: title,
+          title: manualTitle,
           creator: document.getElementById('add-creator').value,
           creatorUrl: document.getElementById('add-creator-url').value,
           genre: document.getElementById('add-genre').value,
@@ -862,7 +908,6 @@
           type: document.getElementById('add-type').value
         });
         closeAddModal();
-        // If the added entry belongs to the other tab, offer to switch
         if (entry.type !== state.type) {
           switchType(entry.type);
         }
@@ -870,21 +915,88 @@
       });
     }
 
-    // Live thumbnail preview when URL changes
+    // Auto-fetch metadata when the URL changes (debounced)
     const urlInput = document.getElementById('add-url');
-    const preview = document.getElementById('add-thumb-preview');
-    if (urlInput && preview) {
+    let fetchTimer = null;
+    if (urlInput) {
       urlInput.addEventListener('input', () => {
-        const meta = parseMediaUrl(urlInput.value);
-        const platLabel = document.getElementById('add-detected-platform');
-        if (platLabel) platLabel.textContent = urlInput.value.trim() ? meta.platform : '—';
-        if (meta.thumbnail) {
-          preview.src = meta.thumbnail;
-          preview.style.display = 'block';
-        } else {
-          preview.style.display = 'none';
+        const url = urlInput.value.trim();
+        clearTimeout(fetchTimer);
+        if (!url || !/^https?:\/\//.test(url)) {
+          setFetchStatus('idle');
+          return;
         }
+        setFetchStatus('loading');
+        fetchTimer = setTimeout(() => {
+          fetchMeta(url).then(meta => {
+            meta.url = url;
+            lastFetchedMeta = meta;
+            applyFetchedMeta(meta);
+          });
+        }, 500);
       });
+    }
+  }
+
+  function openDetails() {
+    const d = document.getElementById('add-details');
+    if (d) d.open = true;
+  }
+
+  function setFetchStatus(status) {
+    const el = document.getElementById('add-fetch-status');
+    const preview = document.getElementById('add-preview');
+    if (!el) return;
+    if (status === 'idle') {
+      el.textContent = '';
+      if (preview) preview.style.display = 'none';
+    } else if (status === 'loading') {
+      el.textContent = '情報を取得中…';
+      el.className = 'add-fetch-status loading';
+    }
+  }
+
+  function applyFetchedMeta(meta) {
+    const el = document.getElementById('add-fetch-status');
+    const preview = document.getElementById('add-preview');
+    const pThumb = document.getElementById('add-preview-thumb');
+    const pTitle = document.getElementById('add-preview-title');
+    const pCreator = document.getElementById('add-preview-creator');
+    const pPlatform = document.getElementById('add-preview-platform');
+
+    // Pre-fill the (hidden) detail fields so the user can tweak if needed
+    const titleField = document.getElementById('add-title');
+    const creatorField = document.getElementById('add-creator');
+    const creatorUrlField = document.getElementById('add-creator-url');
+    const thumbField = document.getElementById('add-thumb');
+    if (titleField && !titleField.value) titleField.value = meta.title || '';
+    if (creatorField && !creatorField.value) creatorField.value = meta.creator || '';
+    if (creatorUrlField && !creatorUrlField.value) creatorUrlField.value = meta.creatorUrl || '';
+    if (thumbField && !thumbField.value && meta.thumbnail) thumbField.value = meta.thumbnail;
+
+    if (el) {
+      if (meta.title) {
+        el.textContent = '✓ 自動取得しました';
+        el.className = 'add-fetch-status ok';
+      } else {
+        el.textContent = '⚠ 自動取得できませんでした。下の「詳細を編集」でタイトルを入力してください';
+        el.className = 'add-fetch-status warn';
+      }
+    }
+
+    if (preview) {
+      if (meta.title || meta.thumbnail) {
+        preview.style.display = 'flex';
+        if (pThumb) {
+          if (meta.thumbnail) { pThumb.src = meta.thumbnail; pThumb.style.display = 'block'; }
+          else pThumb.style.display = 'none';
+        }
+        if (pTitle) pTitle.textContent = meta.title || '(タイトル未取得)';
+        if (pCreator) pCreator.textContent = meta.creator || '';
+        if (pPlatform) pPlatform.textContent = meta.platform || '';
+      } else {
+        preview.style.display = 'none';
+      }
     }
   }
 

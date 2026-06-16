@@ -211,51 +211,68 @@
           </svg>
         </button>
       </div>
-      <p class="add-modal-note">サイト外で見つけたお気に入りを登録できます。<strong>このブラウザにのみ保存</strong>され、自動更新では消えません。</p>
+      <p class="add-modal-note"><strong>URLを貼るだけ</strong>でタイトル・制作者・サムネを自動取得します。<strong>このブラウザにのみ保存</strong>され、自動更新では消えません。</p>
       <form id="add-form" class="add-form">
         <div class="add-field">
-          <label for="add-type">タブ</label>
+          <label for="add-type">登録先タブ</label>
           <select id="add-type">
             <option value="video">MOTION（映像）</option>
             <option value="graphic">GRAPHIC（グラフィック）</option>
           </select>
         </div>
         <div class="add-field">
-          <label for="add-url">URL <span class="req">必須</span></label>
-          <input type="url" id="add-url" placeholder="https://www.youtube.com/watch?v=... / vimeo / X / Behance 等" required />
-          <span class="add-detected">検出: <span id="add-detected-platform">—</span></span>
-          <img id="add-thumb-preview" class="add-thumb-preview" alt="サムネイルプレビュー" style="display:none;" />
+          <label for="add-url">URL <span class="req">これだけでOK</span></label>
+          <input type="url" id="add-url" placeholder="https://www.youtube.com/watch?v=... / Vimeo / X / TikTok 等" required autocomplete="off" />
+          <span id="add-fetch-status" class="add-fetch-status"></span>
         </div>
-        <div class="add-field">
-          <label for="add-title">タイトル <span class="req">必須</span></label>
-          <input type="text" id="add-title" placeholder="作品タイトル" required />
-        </div>
-        <div class="add-field">
-          <label for="add-creator">制作者・スタジオ</label>
-          <input type="text" id="add-creator" placeholder="作家名 / スタジオ名" />
-        </div>
-        <div class="add-field">
-          <label for="add-creator-url">制作者ページURL</label>
-          <input type="url" id="add-creator-url" placeholder="https://...（任意）" />
-        </div>
-        <div class="add-field-row">
-          <div class="add-field">
-            <label for="add-genre">ジャンル</label>
-            <input type="text" id="add-genre" placeholder="CM, MV（カンマ区切り）" />
-          </div>
-          <div class="add-field">
-            <label for="add-tech">技術・スタイル</label>
-            <input type="text" id="add-tech" placeholder="3DCG, 作字（カンマ区切り）" />
+
+        <!-- Auto-fetched preview -->
+        <div id="add-preview" class="add-preview" style="display:none;">
+          <img id="add-preview-thumb" class="add-preview-thumb" alt="" />
+          <div class="add-preview-info">
+            <span id="add-preview-platform" class="add-preview-platform"></span>
+            <span id="add-preview-title" class="add-preview-title"></span>
+            <span id="add-preview-creator" class="add-preview-creator"></span>
           </div>
         </div>
-        <div class="add-field">
-          <label for="add-thumb">サムネイル画像URL</label>
-          <input type="url" id="add-thumb" placeholder="自動取得できない場合に手動指定（任意）" />
-        </div>
-        <div class="add-field">
-          <label for="add-notes">メモ</label>
-          <textarea id="add-notes" rows="2" placeholder="注目ポイントなど（任意）"></textarea>
-        </div>
+
+        <!-- Optional manual override -->
+        <details id="add-details" class="add-details">
+          <summary>詳細を編集（任意・空欄なら自動取得値を使用）</summary>
+          <div class="add-details-body">
+            <div class="add-field">
+              <label for="add-title">タイトル</label>
+              <input type="text" id="add-title" placeholder="自動取得（上書きしたい場合のみ入力）" />
+            </div>
+            <div class="add-field">
+              <label for="add-creator">制作者・スタジオ</label>
+              <input type="text" id="add-creator" placeholder="自動取得（上書きしたい場合のみ）" />
+            </div>
+            <div class="add-field">
+              <label for="add-creator-url">制作者ページURL</label>
+              <input type="url" id="add-creator-url" placeholder="https://...（任意）" />
+            </div>
+            <div class="add-field-row">
+              <div class="add-field">
+                <label for="add-genre">ジャンル</label>
+                <input type="text" id="add-genre" placeholder="CM, MV（カンマ区切り）" />
+              </div>
+              <div class="add-field">
+                <label for="add-tech">技術・スタイル</label>
+                <input type="text" id="add-tech" placeholder="3DCG, 作字（カンマ区切り）" />
+              </div>
+            </div>
+            <div class="add-field">
+              <label for="add-thumb">サムネイル画像URL</label>
+              <input type="url" id="add-thumb" placeholder="自動取得（上書きしたい場合のみ）" />
+            </div>
+            <div class="add-field">
+              <label for="add-notes">メモ</label>
+              <textarea id="add-notes" rows="2" placeholder="注目ポイントなど（任意）"></textarea>
+            </div>
+          </div>
+        </details>
+
         <div class="add-modal-actions">
           <button type="button" class="add-btn-cancel" data-close-modal>キャンセル</button>
           <button type="submit" class="add-btn-submit">登録する</button>
