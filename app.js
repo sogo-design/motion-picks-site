@@ -771,6 +771,41 @@
   // Holds the most recent auto-fetched metadata for the URL in the add form
   let lastFetchedMeta = null;
 
+  // Infer genre / technique tags from the title + creator text (best-effort, rule-based)
+  function inferTags(title, creator, platform) {
+    const text = ((title || '') + ' ' + (creator || '') + ' ' + (platform || '')).toLowerCase();
+    const has = (...keys) => keys.some(k => text.indexOf(k.toLowerCase()) !== -1);
+
+    const genre = [];
+    if (has('mv', 'music video', 'ミュージックビデオ', 'ミュージック・ビデオ', 'official video', 'lyric')) genre.push('MV');
+    if (has('リリック', 'lyric', '歌詞')) genre.push('リリックモーション');
+    if (has('cm', 'tvcm', 'tv-cm', 'コマーシャル', 'commercial', '広告', '篇', '編', '公式チャンネル', 'official channel')) genre.push('CM');
+    if (has('op', 'opening', 'オープニング', 'ノンクレジット', 'タイトル', 'title sequence', 'ed', 'ending', 'エンディング')) genre.push('タイトル/OP');
+    if (has('予告', 'trailer', 'ティザー', 'teaser', 'pv', 'プロモ', 'promo')) genre.push('CM');
+    if (has('ロゴ', 'logo')) genre.push('ロゴモーション');
+    if (has('ブランド', 'brand', 'rebrand', 'リブランド', 'identity', ' vi', ' ci')) genre.push('ブランディング');
+    if (has('アニメ', 'anime', 'animation', 'アニメーション')) genre.push('アニメーション');
+    if (has('3dcg', '3d cg')) genre.push('3DCG');
+
+    const techniques = [];
+    if (has('npr')) techniques.push('NPR');
+    if (has('セルシェード', 'cel shad', 'cel-shad', 'toon', 'トゥーン')) techniques.push('セルシェード');
+    if (has('3dcg', '3d', 'cgi')) techniques.push('3DCG');
+    if (has('2d', '2dアニメ')) techniques.push('2Dアニメーション');
+    if (has('作字', '書道', 'カリグラフィ', 'calligraph', 'レタリング')) techniques.push('作字');
+    if (has('キネティック', 'kinetic')) techniques.push('キネティックタイポ');
+    if (has('タイポ', 'typograph', 'lettering', '文字')) techniques.push('タイポグラフィ');
+    if (has('ストップモーション', 'stop motion', 'stop-motion')) techniques.push('ストップモーション');
+    if (has('セルアニメ', 'セル画')) techniques.push('セルアニメ');
+    if (has('実写', 'live action', 'live-action')) techniques.push('実写合成');
+    if (has('glitch', 'グリッチ')) techniques.push('Glitch');
+
+    return {
+      genre: uniq(genre).slice(0, 2),
+      techniques: uniq(techniques).slice(0, 3)
+    };
+  }
+
   // Fetch title / author / thumbnail for a URL using oEmbed (via CORS-enabled noembed.com),
   // with direct fallbacks for YouTube/Vimeo thumbnails.
   function fetchMeta(url) {
@@ -964,15 +999,22 @@
     const pCreator = document.getElementById('add-preview-creator');
     const pPlatform = document.getElementById('add-preview-platform');
 
+    // Infer genre / technique tags from the fetched title + creator
+    const inferred = inferTags(meta.title, meta.creator, meta.platform);
+
     // Pre-fill the (hidden) detail fields so the user can tweak if needed
     const titleField = document.getElementById('add-title');
     const creatorField = document.getElementById('add-creator');
     const creatorUrlField = document.getElementById('add-creator-url');
     const thumbField = document.getElementById('add-thumb');
+    const genreField = document.getElementById('add-genre');
+    const techField = document.getElementById('add-tech');
     if (titleField && !titleField.value) titleField.value = meta.title || '';
     if (creatorField && !creatorField.value) creatorField.value = meta.creator || '';
     if (creatorUrlField && !creatorUrlField.value) creatorUrlField.value = meta.creatorUrl || '';
     if (thumbField && !thumbField.value && meta.thumbnail) thumbField.value = meta.thumbnail;
+    if (genreField && !genreField.value && inferred.genre.length) genreField.value = inferred.genre.join(', ');
+    if (techField && !techField.value && inferred.techniques.length) techField.value = inferred.techniques.join(', ');
 
     if (el) {
       if (meta.title) {
@@ -994,6 +1036,17 @@
         if (pTitle) pTitle.textContent = meta.title || '(タイトル未取得)';
         if (pCreator) pCreator.textContent = meta.creator || '';
         if (pPlatform) pPlatform.textContent = meta.platform || '';
+        const pTags = document.getElementById('add-preview-tags');
+        if (pTags) {
+          const allTags = inferred.genre.concat(inferred.techniques);
+          if (allTags.length) {
+            pTags.innerHTML = allTags.map(t => '<span class="add-preview-tag">' + escapeHtml(t) + '</span>').join('');
+            pTags.style.display = 'flex';
+          } else {
+            pTags.innerHTML = '<span class="add-preview-tag muted">タグ未推定（詳細で追加可）</span>';
+            pTags.style.display = 'flex';
+          }
+        }
       } else {
         preview.style.display = 'none';
       }

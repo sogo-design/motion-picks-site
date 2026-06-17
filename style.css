@@ -1907,6 +1907,28 @@ body.bg-off .bg-toggle {
   white-space: nowrap;
 }
 
+.add-preview-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.add-preview-tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: var(--tag-genre-bg);
+  color: var(--tag-genre-fg);
+}
+
+.add-preview-tag.muted {
+  background: var(--bg-3);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 /* Optional details accordion */
 .add-details {
   border: 1px solid var(--border);
