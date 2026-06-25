@@ -2066,17 +2066,17 @@ window.picksData = [
     date: "2026-06-05",
     type: "video",
     region: "jp",
-    title: "自主制作アニメMV『いのちになる少女』「朝を吞む」初音ミク",
-    creator: "個人制作（自主制作アニメMV）",
+    title: "JR東日本「キュン♡パス 2026」CM",
+    creator: "ong_ / JR東日本",
     platform: "YouTube",
-    videoUrl: "https://www.youtube.com/watch?v=ZIO2LHi1mKc",
-    creatorUrl: "",
+    videoUrl: "https://www.youtube.com/watch?v=spQpe1NBkhg",
+    creatorUrl: "https://ong-motion.jp/works/487/",
     articleUrl: "",
-    publishedDate: "2025-09-01",
-    genre: ["MV", "アニメーション"],
-    techniques: ["2Dアニメーション", "手描き"],
-    thumbnail: "https://img.youtube.com/vi/ZIO2LHi1mKc/mqdefault.jpg",
-    notes: "初音ミク楽曲「朝を吞む」に乗せた自主制作アニメーションMV『いのちになる少女』。個人制作ならではの繊細な手描きアニメーションと作家性の強い世界観が魅力で、ボカロ×インディペンデントアニメMVシーンの活況を示す一作。"
+    publishedDate: "2025-12-15",
+    genre: ["CM", "モーショングラフィクス"],
+    techniques: ["キネティックタイポ", "日本語タイポ", "タイポグラフィ"],
+    thumbnail: "https://img.youtube.com/vi/spQpe1NBkhg/mqdefault.jpg",
+    notes: "ong_が手がけたJR東日本の平日乗り放題きっぷ「キュン♡パス」2026年版CM。大型サイネージ表示を想定した大胆な文字サイズと、ブランドのハートロゴを散りばめた視認性重視のキネティックタイポグラフィ設計が冴える。日本語タイポを主役にしたong_流ブランドモーションの好例。"
   },
 
 
