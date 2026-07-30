@@ -338,12 +338,44 @@
     });
   }
 
+  // Update the value shown on a collapsed filter header
+  function updateSectionCurrent(which) {
+    const map = { genre: 'genre-current', tech: 'tech-current' };
+    const el = document.getElementById(map[which]);
+    if (!el) return;
+    const val = state[which];
+    const label = (val && val !== 'all') ? val : 'すべて';
+    el.textContent = label;
+    el.setAttribute('data-default', val === 'all' ? '1' : '0');
+  }
+
+  // Collapse/expand a filter section
+  function setSectionCollapsed(section, collapsed) {
+    section.classList.toggle('collapsed', collapsed);
+    const header = section.querySelector('.filter-section-header');
+    if (header) header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  }
+
+  function initCollapsibleFilters() {
+    document.querySelectorAll('.filter-section[data-section]').forEach(section => {
+      const header = section.querySelector('.filter-section-header');
+      if (header) {
+        header.addEventListener('click', () => {
+          setSectionCollapsed(section, !section.classList.contains('collapsed'));
+        });
+      }
+    });
+    updateSectionCurrent('genre');
+    updateSectionCurrent('tech');
+  }
+
   function attachEventListeners() {
     document.getElementById('genre-filter').addEventListener('click', e => {
       if (e.target.tagName !== 'BUTTON') return;
       document.querySelectorAll('#genre-filter .chip').forEach(c => c.classList.remove('active'));
       e.target.classList.add('active');
       state.genre = e.target.getAttribute('data-genre');
+      updateSectionCurrent('genre');
       render();
     });
 
@@ -352,6 +384,7 @@
       document.querySelectorAll('#tech-filter .chip').forEach(c => c.classList.remove('active'));
       e.target.classList.add('active');
       state.tech = e.target.getAttribute('data-tech');
+      updateSectionCurrent('tech');
       render();
     });
 
@@ -390,6 +423,8 @@
       document.getElementById('date-filter').value = 'all';
       document.getElementById('favorites-only').checked = false;
       document.getElementById('search-input').value = '';
+      updateSectionCurrent('genre');
+      updateSectionCurrent('tech');
       render();
     });
 
@@ -673,6 +708,8 @@
     // Reset filters and rebuild for new type
     resetFilters();
     rebuildFiltersForType();
+    updateSectionCurrent('genre');
+    updateSectionCurrent('tech');
     render();
     updateHeroMeta();
   }
@@ -1059,6 +1096,7 @@
     buildChipFilter('tech-filter', getAllTechs(), 'tech');
     buildDateFilter();
     attachEventListeners();
+    initCollapsibleFilters();
     render();
     initBackgroundVideo();
     initSizeToggle();

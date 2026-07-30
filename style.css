@@ -658,18 +658,18 @@ body.bg-off .bg-toggle {
   background: rgba(22, 25, 34, 0.5);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 22px 18px 20px;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   position: relative;
+  overflow: hidden;
 }
 
 .filter-section::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 18px;
-  bottom: 18px;
+  top: 0;
+  bottom: 0;
   width: 2px;
   background: linear-gradient(180deg, var(--accent) 0%, transparent 100%);
   border-radius: 2px;
@@ -680,7 +680,18 @@ body.bg-off .bg-toggle {
   display: flex;
   align-items: center;
   gap: 14px;
-  margin-bottom: 14px;
+  width: 100%;
+  padding: 15px 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.filter-section-header:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .filter-section-num {
@@ -694,12 +705,59 @@ body.bg-off .bg-toggle {
   border-radius: 999px;
   border: 1px solid rgba(139, 124, 255, 0.25);
   font-feature-settings: "tnum" 1;
+  flex-shrink: 0;
 }
 
 .filter-section-text {
   display: flex;
   align-items: baseline;
   gap: 10px;
+}
+
+/* Selected value shown on the (collapsed) header */
+.filter-section-current {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent-strong);
+  letter-spacing: 0.03em;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif;
+}
+
+/* Hide the "すべて" default value to keep the header clean */
+.filter-section-current[data-default="1"] {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.filter-section-chevron {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--transition), color var(--transition);
+}
+
+.filter-section:not(.collapsed) .filter-section-chevron {
+  transform: rotate(180deg);
+  color: var(--accent-strong);
+}
+
+.filter-section-header:hover .filter-section-chevron {
+  color: var(--text);
+}
+
+/* Collapse behaviour */
+.filter-section .chip-group {
+  padding: 0 20px 18px;
+}
+
+.filter-section.collapsed .chip-group {
+  display: none;
 }
 
 .filter-section-title {

@@ -87,27 +87,35 @@
       <input type="search" id="search-input" placeholder="タイトル・制作者・タグで検索..." />
     </div>
 
-    <div class="filter-section">
-      <div class="filter-section-header">
+    <div class="filter-section collapsed" data-section="genre">
+      <button class="filter-section-header" type="button" aria-expanded="false" aria-controls="genre-filter">
         <span class="filter-section-num">01</span>
         <div class="filter-section-text">
           <span class="filter-section-title">ジャンルから探す</span>
           <span class="filter-section-sub">Genre</span>
         </div>
-      </div>
+        <span class="filter-section-current" id="genre-current">すべて</span>
+        <span class="filter-section-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
       <div class="chip-group" id="genre-filter">
         <button class="chip active" data-genre="all">すべて</button>
       </div>
     </div>
 
-    <div class="filter-section">
-      <div class="filter-section-header">
+    <div class="filter-section collapsed" data-section="tech">
+      <button class="filter-section-header" type="button" aria-expanded="false" aria-controls="tech-filter">
         <span class="filter-section-num">02</span>
         <div class="filter-section-text">
           <span class="filter-section-title">技術・スタイルから探す</span>
           <span class="filter-section-sub">Technique &amp; Style</span>
         </div>
-      </div>
+        <span class="filter-section-current" id="tech-current">すべて</span>
+        <span class="filter-section-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </span>
+      </button>
       <div class="chip-group" id="tech-filter">
         <button class="chip active" data-tech="all">すべて</button>
       </div>
